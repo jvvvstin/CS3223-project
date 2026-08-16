@@ -10,6 +10,7 @@ import simpledb.record.*;
  */
 public class Term {
    private Expression lhs, rhs;
+   private String opr;
    
    /**
     * Create a new term that compares two expressions
@@ -17,8 +18,9 @@ public class Term {
     * @param lhs  the LHS expression
     * @param rhs  the RHS expression
     */
-   public Term(Expression lhs, Expression rhs) {
+   public Term(Expression lhs, String opr, Expression rhs) {
       this.lhs = lhs;
+      this.opr = opr;
       this.rhs = rhs;
    }
    
@@ -32,7 +34,23 @@ public class Term {
    public boolean isSatisfied(Scan s) {
       Constant lhsval = lhs.evaluate(s);
       Constant rhsval = rhs.evaluate(s);
-      return rhsval.equals(lhsval);
+      
+      int result = lhsval.compareTo(rhsval);
+      if (opr.equals("=")) {
+    	  return result == 0;
+      } else if (opr.equals("!=") || opr.equals("<>")) {
+    	  return result != 0;
+      } else if (opr.equals("<")) {
+    	  return result < 0;
+      } else if (opr.equals("<=")) {
+    	  return result <= 0;
+      } else if (opr.equals(">")) {
+    	  return result > 0;
+      } else if (opr.equals(">=")) {
+    	  return result >= 0;
+      } else {
+    	  throw new RuntimeException("Unknown operator: " + opr);
+      }
    }
    
    /**
@@ -119,6 +137,6 @@ public class Term {
    }
    
    public String toString() {
-      return lhs.toString() + "=" + rhs.toString();
+      return lhs.toString() + this.opr + rhs.toString();
    }
 }

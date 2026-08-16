@@ -37,6 +37,17 @@ public class Lexer {
    }
    
    /**
+    * Returns true if the current token is an operator.
+    * @return true if the current token is an operator
+    */
+   public boolean matchOpr() {
+	   return tok.ttype == '=' ||
+			  tok.ttype == '<' ||
+			  tok.ttype == '>' ||
+			  tok.ttype == '!';
+   }
+   
+   /**
     * Returns true if the current token is an integer.
     * @return true if the current token is an integer
     */
@@ -81,6 +92,35 @@ public class Lexer {
       if (!matchDelim(d))
          throw new BadSyntaxException();
       nextToken();
+   }
+   
+   public String eatOpr() {
+	   if (!matchOpr()) {
+		   throw new BadSyntaxException();
+	   }
+	   char first = (char) tok.ttype;
+	   boolean mayHaveSecondChar = first == '<' ||
+			   					   first == '!' ||
+			   					   first == '>';
+	   if (mayHaveSecondChar) {
+		   nextToken();
+		   if (tok.ttype == '=') {
+			   String opr = "" + first + (char) tok.ttype;
+			   nextToken();
+			   return opr;
+		   } else if (first == '<' && tok.ttype == '>') {
+			   String opr = "" + first + (char) tok.ttype;
+			   nextToken();
+			   return opr;
+		   } else {
+			   // This token belong to the next part of the expression,
+			   // so put it back.
+			   prevToken();
+			   return String.valueOf(first);
+		   }
+	   }
+	   nextToken();
+	   return String.valueOf(first);
    }
    
    /**
@@ -145,6 +185,15 @@ public class Lexer {
       catch(IOException e) {
          throw new BadSyntaxException();
       }
+   }
+   
+   private void prevToken() {
+	   try {
+		   tok.pushBack();
+	   }
+	   catch (Exception e) {
+		   throw new BadSyntaxException();
+	   }
    }
    
    private void initKeywords() {

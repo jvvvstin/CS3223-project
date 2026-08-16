@@ -10,21 +10,28 @@ public class LexerTest {
 		while (sc.hasNext()) {
 			String s = sc.nextLine();
 			Lexer lex = new Lexer(s);
-			String x; int y;
+			String x; String value;
+			String opr;
 			if (lex.matchId()) {
 				x = lex.eatId();
-//				lex.eatDelim('=');
-				lex.eatOpr();
-				y = lex.eatIntConstant();
+				opr = lex.eatOpr();
+				value = eatConstant(lex);
 			}
 			else {
-				y = lex.eatIntConstant();
-//				lex.eatDelim('=');
-				lex.eatOpr();
+				value = eatConstant(lex);
+				opr = lex.eatOpr();
 				x = lex.eatId();	
 			}
-			System.out.println(x + " equals " + y);
+			System.out.println(x + " " + opr + " " + value);
 		}
 		sc.close();
+	}
+	
+	private static String eatConstant(Lexer lex) {
+		if (lex.matchIntConstant()) {
+			return Integer.toString(lex.eatIntConstant());
+		} else {
+			return lex.eatStringConstant();
+		}
 	}
 }
