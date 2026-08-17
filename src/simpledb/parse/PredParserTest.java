@@ -20,5 +20,3 @@ public class PredParserTest {
 		sc.close();
 	}
 }
-
-

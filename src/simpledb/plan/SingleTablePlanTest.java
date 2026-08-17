@@ -15,12 +15,12 @@ public class SingleTablePlanTest {
 		Plan p1 = new TablePlan(tx, "student", mdm);
 
 		// the Select node for "major = 10"
-		Term t = new Term(new Expression("majorid"), new Expression(new Constant(10)));
+		Term t = new Term(new Expression("majorid"), "=", new Expression(new Constant(10)));
 		Predicate pred = new Predicate(t); 
 		Plan p2 = new SelectPlan(p1, pred);
 
 		// the Select node for "gradyear = 2020"
-		Term t2 = new Term(new Expression("gradyear"), new Expression(new Constant(2020)));
+		Term t2 = new Term(new Expression("gradyear"), "=", new Expression(new Constant(2020)));
 		Predicate pred2 = new Predicate(t2); 
 		Plan p3 = new SelectPlan(p2, pred2);
 

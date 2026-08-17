@@ -1,8 +1,8 @@
 package simpledb.parse;
 import java.util.Scanner;
 
-// Will successfully read in lines of text denoting an
-// SQL expression of the form "id = c" or "c = id".
+//Will successfully read in lines of text denoting an
+//SQL expression of the form "id op c" or "c op id".
 
 public class LexerTest {
 	public static void main(String[] args) {

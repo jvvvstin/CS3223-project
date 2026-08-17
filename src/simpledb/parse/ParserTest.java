@@ -23,5 +23,3 @@ public class ParserTest {
       sc.close();
    }
 }
-
-
