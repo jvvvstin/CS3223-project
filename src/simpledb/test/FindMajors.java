@@ -33,10 +33,9 @@ public class FindMajors {
 	        // analogous to the result set
 	        Scan s = p.open();
 	         
-	        System.out.println("Name\tMajor");
 	        while (s.next()) {
 	           String sname = s.getString("sname"); //SimpleDB stores field names
-	           String gradyear = s.getString("gradyear"); //in lower case
+	           int gradyear = s.getInt("gradyear"); //in lower case
 	           System.out.println(sname + "\t" + gradyear);
 	        }
 	        s.close();
