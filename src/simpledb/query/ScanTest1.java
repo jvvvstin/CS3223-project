@@ -30,7 +30,7 @@ public class ScanTest1 {
       Scan s2 = new TableScan(tx, "T", layout);
       // selecting all records where A=10
       Constant c = new Constant(10);
-      Term t = new Term(new Expression("A"), "=", new Expression(c)); 
+      Term t = new Term(new Expression("A"), new Expression(c)); 
       Predicate pred = new Predicate(t);
       System.out.println("The predicate is " + pred);
       Scan s3 = new SelectScan(s2, pred);

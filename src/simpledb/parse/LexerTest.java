@@ -14,12 +14,14 @@ public class LexerTest {
 			String opr;
 			if (lex.matchId()) {
 				x = lex.eatId();
-				opr = lex.eatOpr();
-				value = eatConstant(lex);
+				lex.eatDelim('=');
+//				lex.eatOpr();
+				y = lex.eatIntConstant();
 			}
 			else {
-				value = eatConstant(lex);
-				opr = lex.eatOpr();
+				y = lex.eatIntConstant();
+				lex.eatDelim('=');
+//				lex.eatOpr();
 				x = lex.eatId();	
 			}
 			System.out.println(x + " " + opr + " " + value);
