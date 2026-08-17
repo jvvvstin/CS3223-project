@@ -20,7 +20,7 @@ public class MultiTablePlanTest {
       Plan p3 = new ProductPlan(p1, p2);
 
       // the Select node for "majorid = did"
-      Term t = new Term(new Expression("majorid"), new Expression("did"));
+      Term t = new Term(new Expression("majorid"), "=", new Expression("did"));
       Predicate pred = new Predicate(t); 
       Plan p4 = new SelectPlan(p3, pred);
 
