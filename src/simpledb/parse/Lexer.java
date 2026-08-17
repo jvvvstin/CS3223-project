@@ -84,6 +84,30 @@ public class Lexer {
    }
    
    /**
+    * Throws an exception if the current token is not
+    * a comparison operator.
+    * Otherwise, returns that operator and moves to the next token.
+    * @return the comparison operator
+    */
+   public String eatOpr() {
+	   char first = (char) tok.ttype;
+	   if (first != '<' && first != '>' && first != '!' && first != '=')
+	      throw new BadSyntaxException();
+
+	   String opr = String.valueOf(first);
+	   nextToken();
+
+	   if ((first == '<' && (tok.ttype == '=' || tok.ttype == '>')) ||
+	       (first == '>' && tok.ttype == '=') ||
+	       (first == '!' && tok.ttype == '=')) {
+	      opr += (char) tok.ttype;
+	      nextToken();
+	   }
+
+	   return opr;
+	}
+   
+   /**
     * Throws an exception if the current token is not 
     * an integer. 
     * Otherwise, returns that integer and moves to the next token.

@@ -10,20 +10,20 @@ public class LexerTest {
 		while (sc.hasNext()) {
 			String s = sc.nextLine();
 			Lexer lex = new Lexer(s);
-			String x; int y;
+			String x; int y; String opr;
 			if (lex.matchId()) {
 				x = lex.eatId();
-				lex.eatDelim('=');
-//				lex.eatOpr();
+//				lex.eatDelim('=');
+				opr = lex.eatOpr();
 				y = lex.eatIntConstant();
 			}
 			else {
 				y = lex.eatIntConstant();
-				lex.eatDelim('=');
-//				lex.eatOpr();
+//				lex.eatDelim('=');
+				opr = lex.eatOpr();
 				x = lex.eatId();	
 			}
-			System.out.println(x + " equals " + y);
+			System.out.println(x + " " + opr + " " + y);
 		}
 		sc.close();
 	}
