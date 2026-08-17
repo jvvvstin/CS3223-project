@@ -43,7 +43,7 @@ public class ScanTest2 {
       Scan s2 = new TableScan(tx, "T2", layout2);
       Scan s3 = new ProductScan(s1, s2);
       // selecting all records where A=C
-      Term t = new Term(new Expression("A"), "=", new Expression("C")); 
+      Term t = new Term(new Expression("A"), new Expression("C")); 
       Predicate pred = new Predicate(t);
       System.out.println("The predicate is " + pred);
       Scan s4 = new SelectScan(s3, pred);
