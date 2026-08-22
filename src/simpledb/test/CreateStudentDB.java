@@ -17,8 +17,19 @@ public class CreateStudentDB {
 	        String s = "create table STUDENT(SId int, SName varchar(10), MajorId int, GradYear int)";
 	        planner.executeUpdate(s, tx);
 	        System.out.println("Table STUDENT created.");
-	         
-	        // Insertion of STUDENT records
+
+            // Creation of STUDENT indexes
+            s = "create index idx_studentName on STUDENT(SName)";
+            planner.executeUpdate(s, tx);
+
+            s = "create index idx_majorId on STUDENT(MajorId)";
+            planner.executeUpdate(s, tx);
+
+            s = "create index idx_gradYear on STUDENT(GradYear)";
+            planner.executeUpdate(s, tx);
+            System.out.println("STUDENT indexes created.");
+
+            // Insertion of STUDENT records
 	        s = "insert into STUDENT(SId, SName, MajorId, GradYear) values ";
 	        String[] studvals = {"(1, 'joe', 10, 2021)",
 					             "(2, 'amy', 20, 2020)",
