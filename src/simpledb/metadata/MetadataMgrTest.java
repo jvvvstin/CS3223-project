@@ -57,8 +57,8 @@ public class MetadataMgrTest {
       System.out.println("View def = " + v);
 
       // Part 4: Index Metadata
-      mdm.createIndex("indexA", "MyTable", "A", tx);
-      mdm.createIndex("indexB", "MyTable", "B", tx);
+      mdm.createIndex("indexA", "MyTable", "A", "", tx);
+      mdm.createIndex("indexB", "MyTable", "B", "btree", tx);
       Map<String,IndexInfo> idxmap = mdm.getIndexInfo("MyTable", tx);
          
       IndexInfo ii = idxmap.get("A");
@@ -66,12 +66,14 @@ public class MetadataMgrTest {
       System.out.println("R(indexA) = " + ii.recordsOutput());
       System.out.println("V(indexA,A) = " + ii.distinctValues("A"));
       System.out.println("V(indexA,B) = " + ii.distinctValues("B"));
+      System.out.println(ii);
 
       ii = idxmap.get("B");
       System.out.println("B(indexB) = " + ii.blocksAccessed());
       System.out.println("R(indexB) = " + ii.recordsOutput());
       System.out.println("V(indexB,A) = " + ii.distinctValues("A"));
       System.out.println("V(indexB,B) = " + ii.distinctValues("B"));
+      System.out.println(ii);
       tx.commit();
    }
 }
