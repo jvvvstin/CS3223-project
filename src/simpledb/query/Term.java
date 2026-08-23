@@ -92,11 +92,13 @@ public class Term {
     * @return either the constant or null
     */
    public Constant equatesWithConstant(String fldname) {
-      if (lhs.isFieldName() &&
+      if (opr.equals("=") &&
+          lhs.isFieldName() &&
           lhs.asFieldName().equals(fldname) &&
           !rhs.isFieldName())
          return rhs.asConstant();
-      else if (rhs.isFieldName() &&
+      else if (opr.equals("=") &&
+               rhs.isFieldName() &&
                rhs.asFieldName().equals(fldname) &&
                !lhs.isFieldName())
          return lhs.asConstant();
@@ -113,11 +115,13 @@ public class Term {
     * @return either the name of the other field, or null
     */
    public String equatesWithField(String fldname) {
-      if (lhs.isFieldName() &&
+      if (opr.equals("=") &&
+          lhs.isFieldName() &&
           lhs.asFieldName().equals(fldname) &&
           rhs.isFieldName())
          return rhs.asFieldName();
-      else if (rhs.isFieldName() &&
+      else if (opr.equals("=") &&
+               rhs.isFieldName() &&
                rhs.asFieldName().equals(fldname) &&
                lhs.isFieldName())
          return lhs.asFieldName();
