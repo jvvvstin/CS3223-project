@@ -19,13 +19,13 @@ public class CreateStudentDB {
 	        System.out.println("Table STUDENT created.");
 
             // Creation of STUDENT indexes
-            s = "create index idx_studentName on STUDENT(SName) using hash";
+            s = "create index idx_studentName on STUDENT(SName)";
             planner.executeUpdate(s, tx);
 
             s = "create index idx_majorId on STUDENT(MajorId) using btree";
             planner.executeUpdate(s, tx);
 
-            s = "create index idx_gradYear on STUDENT(GradYear)";
+            s = "create index idx_gradYear on STUDENT(GradYear) using btree";
             planner.executeUpdate(s, tx);
             System.out.println("STUDENT indexes created.");
 

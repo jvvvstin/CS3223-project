@@ -246,7 +246,15 @@ public class Parser {
 
       if (lex.matchKeyword("using")) {
           lex.eatKeyword("using");
-          idxtype = lex.eatId();
+
+          if (lex.matchKeyword("hash")) {
+              lex.eatKeyword("hash");
+              idxtype = "hash";
+          }
+          else if (lex.matchKeyword("btree")) {
+              lex.eatKeyword("btree");
+              idxtype = "btree";
+          }
       }
 
       return new CreateIndexData(idxname, tblname, fldname, idxtype);
