@@ -17,6 +17,11 @@ public class CreateStudentDB {
 	        String s = "create table STUDENT(SId int, SName varchar(10), MajorId int, GradYear int)";
 	        planner.executeUpdate(s, tx);
 	        System.out.println("Table STUDENT created.");
+
+			// Creation of indexes in STUDENT table
+			s = "create index majoridx on student(majorid)";
+			planner.executeUpdate(s, tx);
+			System.out.println("Index MajorId on STUDENT table created.");
 	         
 	        // Insertion of STUDENT records
 	        s = "insert into STUDENT(SId, SName, MajorId, GradYear) values ";
@@ -88,6 +93,11 @@ public class CreateStudentDB {
 	        s = "create table ENROLL(EId int, StudentId int, SectionId int, Grade varchar(2))";
 	        planner.executeUpdate(s, tx);
 	        System.out.println("Table ENROLL created.");
+
+			// Creation of indexes in ENROLL table
+	        s = "create index studentididx on enroll(studentid)";
+	        planner.executeUpdate(s, tx);
+	        System.out.println("Index StudentId on ENROLL table created.");
 	        
 	        // Insertion of ENROLL records
 	        s = "insert into ENROLL(EId, StudentId, SectionId, Grade) values ";
