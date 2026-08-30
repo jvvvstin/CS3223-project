@@ -2,6 +2,7 @@ package simpledb.plan;
 
 import java.util.*;
 import simpledb.tx.Transaction;
+import simpledb.materialize.*;
 import simpledb.metadata.*;
 import simpledb.parse.*;
 
@@ -23,7 +24,7 @@ public class BasicQueryPlanner implements QueryPlanner {
     */
    public Plan createPlan(QueryData data, Transaction tx) {
       //Step 1: Create a plan for each mentioned table or view.
-     List<Plan> plans = new ArrayList<>();
+      List<Plan> plans = new ArrayList<>();
       for (String tblname : data.tables()) {
          String viewdef = mdm.getViewDef(tblname, tx);
          if (viewdef != null) { // Recursively plan the view.
@@ -45,6 +46,7 @@ public class BasicQueryPlanner implements QueryPlanner {
       
       //Step 4: Project on the field names
       p = new ProjectPlan(p, data.fields());
+      p = new SortPlan(tx, p, data.fields());
       return p;
    }
 }
