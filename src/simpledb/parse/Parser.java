@@ -240,7 +240,12 @@ public class Parser {
       lex.eatDelim('(');
       String fldname = field();
       lex.eatDelim(')');
-      return new CreateIndexData(idxname, tblname, fldname);
+      String idxtype = "btree";  
+      if (lex.matchKeyword("using")) {
+         lex.eatKeyword("using");
+         idxtype = lex.eatId();         
+      }
+      return new CreateIndexData(idxname, tblname, fldname, idxtype);
    }
 }
 

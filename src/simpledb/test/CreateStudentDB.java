@@ -17,6 +17,15 @@ public class CreateStudentDB {
 	        String s = "create table STUDENT(SId int, SName varchar(10), MajorId int, GradYear int)";
 	        planner.executeUpdate(s, tx);
 	        System.out.println("Table STUDENT created.");
+
+			// Creation of indexes
+			s = "create index IdxSId on STUDENT (SId) using btree";
+			planner.executeUpdate(s, tx);
+			System.out.println("Index on STUDENT(SId) [btree] created.");
+
+			s = "create index IdxMajorId on STUDENT (MajorId) using hash";
+			planner.executeUpdate(s, tx);
+			System.out.println("Index on STUDENT(MajorId) [hash] created.");
 	         
 	        // Insertion of STUDENT records
 	        s = "insert into STUDENT(SId, SName, MajorId, GradYear) values ";
