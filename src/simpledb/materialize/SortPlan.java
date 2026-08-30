@@ -15,18 +15,23 @@ public class SortPlan implements Plan {
    private Plan p;
    private Schema sch;
    private RecordComparator comp;
-   
+
+   public SortPlan(Transaction tx, Plan p, List<String> sortFields) {
+       this(tx, p, sortFields, defaultAscending(sortFields));
+   }
+
    /**
     * Create a sort plan for the specified query.
     * @param p the plan for the underlying query
     * @param sortfields the fields to sort by
+    * @param sortascending the sorting order for the fields
     * @param tx the calling transaction
     */
-   public SortPlan(Transaction tx, Plan p, List<String> sortfields) {
+   public SortPlan(Transaction tx, Plan p, List<String> sortfields, List<Boolean> sortascending) {
       this.tx = tx;
       this.p = p;
       sch = p.schema();
-      comp = new RecordComparator(sortfields);
+      comp = new RecordComparator(sortfields, sortascending);
    }
    
    /**
@@ -149,5 +154,13 @@ public class SortPlan implements Plan {
       for (String fldname : sch.fields())
          dest.setVal(fldname, src.getVal(fldname));
       return src.next();
+   }
+
+   private static List<Boolean> defaultAscending(List<String> sortFields) {
+       List<Boolean> result = new ArrayList<>();
+       for (int i = 0; i < sortFields.size(); i++) {
+           result.add(true);
+       }
+       return result;
    }
 }

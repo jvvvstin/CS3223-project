@@ -2,6 +2,7 @@ package simpledb.opt;
 
 import java.util.*;
 import simpledb.tx.Transaction;
+import simpledb.materialize.*;
 import simpledb.metadata.MetadataMgr;
 import simpledb.parse.QueryData;
 import simpledb.plan.*;
@@ -28,16 +29,16 @@ public class HeuristicQueryPlanner implements QueryPlanner {
     */
    public Plan createPlan(QueryData data, Transaction tx) {
       
-      // Step 1:  Create a TablePlanner object for each mentioned table
+      // Step 1: Create a TablePlanner object for each mentioned table
       for (String tblname : data.tables()) {
          TablePlanner tp = new TablePlanner(tblname, data.pred(), tx, mdm);
          tableplanners.add(tp);
       }
       
-      // Step 2:  Choose the lowest-size plan to begin the join order
+      // Step 2: Choose the lowest-size plan to begin the join order
       Plan currentplan = getLowestSelectPlan();
       
-      // Step 3:  Repeatedly add a plan to the join order
+      // Step 3: Repeatedly add a plan to the join order
       while (!tableplanners.isEmpty()) {
          Plan p = getLowestJoinPlan(currentplan);
          if (p != null)
@@ -46,8 +47,15 @@ public class HeuristicQueryPlanner implements QueryPlanner {
             currentplan = getLowestProductPlan(currentplan);
       }
       
-      // Step 4.  Project on the field names and return
-      return new ProjectPlan(currentplan, data.fields());
+      // Step 4: Project on the field names and return
+      Plan p = new ProjectPlan(currentplan, data.fields());
+
+      // Step 5: Sort if ORDER BY is specified
+      if (!data.sortFields().isEmpty()) {
+          p = new SortPlan(tx, p, data.sortFields(), data.sortAscending());
+      }
+
+      return p;
    }
    
    private Plan getLowestSelectPlan() {
