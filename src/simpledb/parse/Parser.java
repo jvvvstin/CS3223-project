@@ -64,7 +64,12 @@ public class Parser {
          lex.eatKeyword("where");
          pred = predicate();
       }
-      return new QueryData(fields, tables, pred);
+      if (lex.matchKeyword("order")) {
+         lex.eatKeyword("order");
+         lex.eatKeyword("by");
+         sortfields = sortList();
+      }
+      return new QueryData(fields, tables, pred, sortfields);
    }
    
    private List<String> selectList() {
@@ -85,6 +90,24 @@ public class Parser {
          L.addAll(tableList());
       }
       return L;
+   }
+   
+   private List<OrderBy> sortList() {
+      List<OrderBy> lst = new ArrayList<OrderBy>();
+      String fldname = field();
+      boolean asc = true;
+      if (lex.matchKeyword("asc"))
+         lex.eatKeyword("asc");
+      else if (lex.matchKeyword("desc")) {
+         lex.eatKeyword("desc");
+         asc = false;
+      }
+      lst.add(new OrderBy(fldname, asc));
+      if (lex.matchDelim(',')) {
+         lex.eatDelim(',');
+         lst.addAll(sortList());
+      }
+      return lst;
    }
    
 // Methods for parsing the various update commands
