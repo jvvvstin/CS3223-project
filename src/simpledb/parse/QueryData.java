@@ -74,6 +74,12 @@ public class QueryData {
       String predstring = pred.toString();
       if (!predstring.equals(""))
          result += " where " + predstring;
+            if (!sortfields.isEmpty()) {
+         result += " order by ";
+         for (OrderBy f : sortfields)
+            result += f + ", ";
+         result = result.substring(0, result.length()-2);
+      }
       return result;
    }
 }
