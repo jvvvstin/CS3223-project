@@ -46,13 +46,14 @@ public class HeuristicQueryPlanner implements QueryPlanner {
          else  // no applicable join
             currentplan = getLowestProductPlan(currentplan);
       }
-      
-      // Step 4.  Project on the field names and return
-      Plan p = new ProjectPlan(currentplan, data.fields());
 
-      // Step 5.  Add a sort plan, if there is an order by clause
+      // Step 4.  Add a sort plan, if there is an order by clause
+      Plan p = currentplan;
       if (data.hasSortFields())
-         p = new SortPlan(tx, p, data.sortFields());
+          p = new SortPlan(tx, p, data.sortFields());
+
+      // Step 5.  Project on the field names and return
+      p = new ProjectPlan(p, data.fields());
 
       return p;
    }
