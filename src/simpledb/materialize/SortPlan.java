@@ -1,10 +1,10 @@
 package simpledb.materialize;
 
 import java.util.*;
-import simpledb.tx.Transaction;
-import simpledb.record.*;
 import simpledb.plan.Plan;
 import simpledb.query.*;
+import simpledb.record.*;
+import simpledb.tx.Transaction;
 
 /**
  * The Plan class for the <i>sort</i> operator.
@@ -22,7 +22,7 @@ public class SortPlan implements Plan {
     * @param sortfields the fields to sort by
     * @param tx the calling transaction
     */
-   public SortPlan(Transaction tx, Plan p, List<String> sortfields) {
+   public SortPlan(Transaction tx, Plan p, List<OrderBy> sortfields) {
       this.tx = tx;
       this.p = p;
       sch = p.schema();

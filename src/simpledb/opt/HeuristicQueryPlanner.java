@@ -1,10 +1,11 @@
 package simpledb.opt;
 
 import java.util.*;
-import simpledb.tx.Transaction;
+import simpledb.materialize.*;
 import simpledb.metadata.MetadataMgr;
 import simpledb.parse.QueryData;
 import simpledb.plan.*;
+import simpledb.tx.Transaction;
 
 /**
  * A query planner that optimizes using a heuristic-based algorithm.
@@ -47,7 +48,13 @@ public class HeuristicQueryPlanner implements QueryPlanner {
       }
       
       // Step 4.  Project on the field names and return
-      return new ProjectPlan(currentplan, data.fields());
+      Plan p = new ProjectPlan(currentplan, data.fields());
+
+      // Step 5.  Add a sort plan, if there is an order by clause
+      if (data.hasSortFields())
+         p = new SortPlan(tx, p, data.sortFields());
+
+      return p;
    }
    
    private Plan getLowestSelectPlan() {

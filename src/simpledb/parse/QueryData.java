@@ -12,14 +12,22 @@ public class QueryData {
    private List<String> fields;
    private Collection<String> tables;
    private Predicate pred;
+   private List<OrderBy> sortFields;
+
    
    /**
     * Saves the field and table list and predicate.
     */
    public QueryData(List<String> fields, Collection<String> tables, Predicate pred) {
+      this(fields, tables, pred, new ArrayList<OrderBy>());
+   }
+
+   public QueryData(List<String> fields, Collection<String> tables, Predicate pred,
+                     List<OrderBy> sortFields) {
       this.fields = fields;
       this.tables = tables;
       this.pred = pred;
+      this.sortFields = sortFields;
    }
    
    /**
@@ -46,19 +54,33 @@ public class QueryData {
    public Predicate pred() {
       return pred;
    }
+
+   public List<OrderBy> sortFields() {
+      return sortFields;
+   }
+
+   public boolean hasSortFields() {
+      return sortFields != null && !sortFields.isEmpty();
+   }
    
    public String toString() {
       String result = "select ";
       for (String fldname : fields)
          result += fldname + ", ";
-      result = result.substring(0, result.length()-2); //remove final comma
+      result = result.substring(0, result.length()-2);
       result += " from ";
       for (String tblname : tables)
          result += tblname + ", ";
-      result = result.substring(0, result.length()-2); //remove final comma
+      result = result.substring(0, result.length()-2);
       String predstring = pred.toString();
       if (!predstring.equals(""))
          result += " where " + predstring;
+      if (hasSortFields()) {
+         result += " order by ";
+         for (OrderBy ob : sortFields)
+            result += ob.toString() + ", ";
+         result = result.substring(0, result.length()-2);
+      }
       return result;
    }
 }
