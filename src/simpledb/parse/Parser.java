@@ -64,6 +64,7 @@ public class Parser {
          lex.eatKeyword("where");
          pred = predicate();
       }
+      List<OrderBy> sortfields = new ArrayList<OrderBy>();
       if (lex.matchKeyword("order")) {
          lex.eatKeyword("order");
          lex.eatKeyword("by");
@@ -259,25 +260,25 @@ public class Parser {
       lex.eatKeyword("index");
       String idxname = lex.eatId();
       lex.eatKeyword("on");
-         String tblname = lex.eatId();
-         lex.eatDelim('(');
-         String fldname = field();
-         lex.eatDelim(')');
+      String tblname = lex.eatId();
+      lex.eatDelim('(');
+      String fldname = field();
+      lex.eatDelim(')');
 
-         // Default to using hash indexes
-         String idxtype = "hash";
-         if (lex.matchKeyword("using")) {
-            lex.eatKeyword("using");
-            if (lex.matchKeyword("hash")) {
-               lex.eatKeyword("hash");
-            }
-            else if (lex.matchKeyword("btree")) {
-               lex.eatKeyword("btree");
-               idxtype = "btree";
-            }
+      // Default to using hash indexes
+      String idxtype = "hash";
+      if (lex.matchKeyword("using")) {
+         lex.eatKeyword("using");
+         if (lex.matchKeyword("hash")) {
+            lex.eatKeyword("hash");
+         }
+         else if (lex.matchKeyword("btree")) {
+            lex.eatKeyword("btree");
+            idxtype = "btree";
+         }
          else
             throw new BadSyntaxException(); // Invalid index type
-         }
+      }
       return new CreateIndexData(idxname, tblname, fldname, idxtype);
    }
 }
