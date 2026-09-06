@@ -175,6 +175,8 @@ public class Lexer {
       keywords = Arrays.asList("select", "from", "where", "and",
                                "insert", "into", "values", "delete", "update", "set", 
                                "create", "table", "int", "varchar", "view", "as", "index", "on",
-                              "order", "by", "asc", "desc");
+                               "using", "hash", "btree",
+                               "order", "by", "asc", "desc");
    }
+
 }
