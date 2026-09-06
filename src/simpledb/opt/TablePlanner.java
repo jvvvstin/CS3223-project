@@ -1,6 +1,8 @@
 package simpledb.opt;
 
 import java.util.Map;
+
+import simpledb.materialize.MergeJoinPlan;
 import simpledb.tx.Transaction;
 import simpledb.record.*;
 import simpledb.query.*;
@@ -62,11 +64,20 @@ class TablePlanner {
    public Plan makeJoinPlan(Plan current) {
       Schema currsch = current.schema();
       Predicate joinpred = mypred.joinSubPred(myschema, currsch);
+
       if (joinpred == null)
          return null;
+
       Plan p = makeIndexJoin(current, currsch);
-      if (p == null)
-         p = makeProductJoin(current, currsch);
+
+      if (p == null) {
+          p = makeMergeJoin(current, currsch);
+      }
+
+      if (p == null) {
+          p = makeNestedLoopsJoin(current, joinpred);
+      }
+
       return p;
    }
    
@@ -109,6 +120,24 @@ class TablePlanner {
    private Plan makeProductJoin(Plan current, Schema currsch) {
       Plan p = makeProductPlan(current);
       return addJoinPred(p, currsch);
+   }
+
+   private Plan makeNestedLoopsJoin(Plan current, Predicate joinpred) {
+       Plan p = addSelectPred(myplan);
+       return new NestedLoopsPlan(current, p, joinpred);
+   }
+
+   private Plan makeMergeJoin(Plan current, Schema currsch) {
+       for (String fldname : myschema.fields()) {
+           String outerfield = mypred.equatesWithField(fldname);
+
+           if (outerfield != null && currsch.hasField(outerfield)) {
+               Plan p = addSelectPred(myplan);
+
+               return new MergeJoinPlan(tx, current, p, outerfield, fldname);
+           }
+       }
+       return null;
    }
    
    private Plan addSelectPred(Plan p) {
