@@ -1,9 +1,20 @@
 package simpledb.query;
 
+/**
+ * The scan class corresponding to the nested loops
+ * join relational algebra operator.
+ */
 public class NestedLoopsScan implements Scan {
     private Scan s1, s2;
     private Predicate joinpred;
 
+    /**
+     * Create a nested loops scan having the two underlying scans
+     * and the specified join predicate.
+     * @param s1 the LHS scan
+     * @param s2 the RHS scan
+     * @param joinpred
+     */
     public NestedLoopsScan(Scan s1, Scan s2, Predicate joinpred) {
         this.s1 = s1;
         this.s2 = s2;
@@ -11,6 +22,9 @@ public class NestedLoopsScan implements Scan {
         beforeFirst();
     }
 
+    /**
+     * Position the scan before its first record.
+     */
     public void beforeFirst() {
         s1.beforeFirst();
         s1.next();
