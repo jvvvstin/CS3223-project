@@ -1,10 +1,10 @@
 package simpledb.materialize;
 
 import java.util.*;
-import simpledb.tx.Transaction;
-import simpledb.record.Schema;
 import simpledb.plan.Plan;
 import simpledb.query.*;
+import simpledb.record.Schema;
+import simpledb.tx.Transaction;
 
 /**
  * The Plan class for the <i>groupby</i> operator.
@@ -28,7 +28,10 @@ public class GroupByPlan implements Plan {
     * @param tx the calling transaction
     */
    public GroupByPlan(Transaction tx, Plan p, List<String> groupfields, List<AggregationFn> aggfns) {
-      this.p = new SortPlan(tx, p, groupfields);
+      List<OrderBy> sortfields = new ArrayList<>();
+      for (String fldname : groupfields)
+         sortfields.add(new OrderBy(fldname)); // default ascending
+      this.p = new SortPlan(tx, p, sortfields);
       this.groupfields = groupfields;
       this.aggfns = aggfns;
       for (String fldname : groupfields)

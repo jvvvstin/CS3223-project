@@ -64,7 +64,37 @@ public class Parser {
          lex.eatKeyword("where");
          pred = predicate();
       }
-      return new QueryData(fields, tables, pred);
+      List<OrderBy> sortFields = new ArrayList<>();
+      if (lex.matchKeyword("order")) {
+         lex.eatKeyword("order");
+         lex.eatKeyword("by");
+         sortFields = sortList();
+      }
+      return new QueryData(fields, tables, pred, sortFields);
+   }
+
+   private List<OrderBy> sortList() {
+      List<OrderBy> L = new ArrayList<>();
+      L.add(sortField());
+      if (lex.matchDelim(',')) {
+         lex.eatDelim(',');
+         L.addAll(sortList());
+      }
+      return L;
+   }
+
+   private OrderBy sortField() {
+      String fldname = field();
+      boolean ascending = true;
+      if (lex.matchKeyword("asc")) {
+         lex.eatKeyword("asc");
+         ascending = true;
+      }
+      else if (lex.matchKeyword("desc")) {
+         lex.eatKeyword("desc");
+         ascending = false;
+      }
+      return new OrderBy(fldname, ascending);
    }
    
    private List<String> selectList() {
