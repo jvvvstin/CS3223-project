@@ -7,6 +7,7 @@ import simpledb.query.*;
 import simpledb.metadata.*;
 import simpledb.index.planner.*;
 import simpledb.multibuffer.MultibufferProductPlan;
+import simpledb.materialize.MergeJoinPlan;
 import simpledb.plan.*;
 
 /**
@@ -64,11 +65,27 @@ class TablePlanner {
       Predicate joinpred = mypred.joinSubPred(myschema, currsch);
       if (joinpred == null)
          return null;
-      Plan p = makeIndexJoin(current, currsch);
-      if (p == null)
-         p = makeProductJoin(current, currsch);
-      return p;
+
+      Plan[] candidates = { makeIndexJoin(current, currsch),
+                            makeMergeJoin(current, currsch),
+                            makeNestedLoopsJoin(current, currsch),
+                            makeProductJoin(current, currsch) };
+      String[] names    = { "indexjoin", "mergejoin", "nestedloopsjoin", "productjoin" };
+
+      Plan best = null;
+      String bestname = null;
+      for (int i = 0; i < candidates.length; i++) {
+         Plan p = candidates[i];
+         if (p != null && (best == null || p.blocksAccessed() < best.blocksAccessed())) {
+            best = p;
+            bestname = names[i];
+         }
+      }
+      if (best != null)
+         System.out.println("join strategy chosen: " + bestname);
+      return best;
    }
+
    
    /**
     * Constructs a product plan of the specified plan and
@@ -105,7 +122,27 @@ class TablePlanner {
       }
       return null;
    }
-   
+
+   private Plan makeMergeJoin(Plan current, Schema currsch) {
+      for (String fldname : myschema.fields()) {
+         String outerfield = mypred.equatesWithField(fldname);
+         if (outerfield != null && currsch.hasField(outerfield)) {
+            Plan p = new MergeJoinPlan(tx, current, myplan, outerfield, fldname);
+            p = addSelectPred(p);
+            return addJoinPred(p, currsch);
+         }
+      }
+      return null;
+   }
+
+   private Plan makeNestedLoopsJoin(Plan current, Schema currsch) {
+      Predicate joinpred = mypred.joinSubPred(myschema, currsch);
+      if (joinpred == null)
+         return null;
+      Plan p = addSelectPred(myplan);
+      return new NestedLoopsPlan(current, p, joinpred);
+   }
+
    private Plan makeProductJoin(Plan current, Schema currsch) {
       Plan p = makeProductPlan(current);
       return addJoinPred(p, currsch);
