@@ -66,24 +66,21 @@ class TablePlanner {
       if (joinpred == null)
          return null;
 
-      Plan[] candidates = { makeIndexJoin(current, currsch),
-                            makeMergeJoin(current, currsch),
-                            makeNestedLoopsJoin(current, currsch),
-                            makeProductJoin(current, currsch) };
-      String[] names    = { "indexjoin", "mergejoin", "nestedloopsjoin", "productjoin" };
+      Plan p = makeIndexJoin(current, currsch);
+      String strategy = "indexjoin";
 
-      Plan best = null;
-      String bestname = null;
-      for (int i = 0; i < candidates.length; i++) {
-         Plan p = candidates[i];
-         if (p != null && (best == null || p.blocksAccessed() < best.blocksAccessed())) {
-            best = p;
-            bestname = names[i];
-         }
+      if (p == null) {
+          p = makeMergeJoin(current, currsch);
+          strategy = "mergejoin";
       }
-      if (best != null)
-         System.out.println("join strategy chosen: " + bestname);
-      return best;
+
+      if (p == null) {
+          p = makeNestedLoopsJoin(current, currsch);
+          strategy = "nestedloopsjoin";
+      }
+
+       System.out.println("join strategy chosen: " + strategy);
+      return p;
    }
 
    
