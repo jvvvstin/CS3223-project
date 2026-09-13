@@ -3,8 +3,10 @@ package simpledb.server;
 import java.io.File;
 import simpledb.buffer.BufferMgr;
 import simpledb.file.FileMgr;
+import simpledb.index.planner.IndexUpdatePlanner;
 import simpledb.log.LogMgr;
 import simpledb.metadata.MetadataMgr;
+import simpledb.opt.HeuristicQueryPlanner;
 import simpledb.plan.*;
 import simpledb.tx.Transaction;
 

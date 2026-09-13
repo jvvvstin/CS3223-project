@@ -127,8 +127,8 @@ class TablePlanner {
       for (String fldname : myschema.fields()) {
          String outerfield = mypred.equatesWithField(fldname);
          if (outerfield != null && currsch.hasField(outerfield)) {
-            Plan p = new MergeJoinPlan(tx, current, myplan, outerfield, fldname);
-            p = addSelectPred(p);
+            Plan p = addSelectPred(myplan);
+            p = new MergeJoinPlan(tx, current, p, outerfield, fldname);
             return addJoinPred(p, currsch);
          }
       }
