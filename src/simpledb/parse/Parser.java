@@ -56,7 +56,8 @@ public class Parser {
    
    public QueryData query() {
       lex.eatKeyword("select");
-      List<String> fields = selectList();
+      List<AggregateFnData> aggregates = new ArrayList<>();
+      List<String> fields = selectList(aggregates);
       lex.eatKeyword("from");
       Collection<String> tables = tableList();
       Predicate pred = new Predicate();
@@ -64,13 +65,19 @@ public class Parser {
          lex.eatKeyword("where");
          pred = predicate();
       }
+      List<String> groupByFields = new ArrayList<>();
+      if (lex.matchKeyword("group")) {
+          lex.eatKeyword("group");
+          lex.eatKeyword("by");
+          groupByFields = groupList();
+      }
       List<OrderBy> sortFields = new ArrayList<>();
       if (lex.matchKeyword("order")) {
          lex.eatKeyword("order");
          lex.eatKeyword("by");
          sortFields = sortList();
       }
-      return new QueryData(fields, tables, pred, sortFields);
+      return new QueryData(fields, tables, pred, sortFields, groupByFields, aggregates);
    }
 
    private List<OrderBy> sortList() {
@@ -81,6 +88,21 @@ public class Parser {
          L.addAll(sortList());
       }
       return L;
+   }
+
+   private List<String> groupList() {
+       List<String> L = new ArrayList<>();
+       L.add(groupField());
+       if (lex.matchDelim(',')) {
+           lex.eatDelim(',');
+           L.addAll(groupList());
+       }
+       return L;
+   }
+
+   private String groupField() {
+       String fldname = field();
+       return fldname;
    }
 
    private OrderBy sortField() {
@@ -97,12 +119,48 @@ public class Parser {
       return new OrderBy(fldname, ascending);
    }
    
-   private List<String> selectList() {
+   private List<String> selectList(List<AggregateFnData> aggregates) {
       List<String> L = new ArrayList<String>();
-      L.add(field());
+
+      if (lex.matchKeyword("count") ||
+          lex.matchKeyword("sum") ||
+          lex.matchKeyword("avg") ||
+          lex.matchKeyword("min") ||
+          lex.matchKeyword("max")) {
+          String fn;
+
+          if (lex.matchKeyword("count")) {
+              fn = "count";
+              lex.eatKeyword("count");
+          } else if (lex.matchKeyword("sum")) {
+              fn = "sum";
+              lex.eatKeyword("sum");
+          } else if (lex.matchKeyword("avg")) {
+              fn = "avg";
+              lex.eatKeyword("avg");
+          } else if (lex.matchKeyword("min")) {
+              fn = "min";
+              lex.eatKeyword("min");
+          } else {
+              fn = "max";
+              lex.eatKeyword("max");
+          }
+
+          lex.eatDelim('(');
+          String fldname = field();
+          lex.eatDelim(')');
+
+          AggregateFnData agg = new AggregateFnData(fn, fldname);
+          aggregates.add(agg);
+
+          L.add(agg.outputFieldName());
+      } else {
+          L.add(field());
+      }
+
       if (lex.matchDelim(',')) {
          lex.eatDelim(',');
-         L.addAll(selectList());
+         L.addAll(selectList(aggregates));
       }
       return L;
    }

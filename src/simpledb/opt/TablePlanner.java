@@ -1,6 +1,8 @@
 package simpledb.opt;
 
 import java.util.Map;
+
+import simpledb.materialize.HashJoinPlan;
 import simpledb.tx.Transaction;
 import simpledb.record.*;
 import simpledb.query.*;
@@ -68,6 +70,11 @@ class TablePlanner {
 
       Plan p = makeIndexJoin(current, currsch);
       String strategy = "indexjoin";
+
+      if (p == null) {
+          p = makeHashJoin(current, currsch);
+          strategy = "hashjoin";
+      }
 
       if (p == null) {
           p = makeMergeJoin(current, currsch);
@@ -138,6 +145,22 @@ class TablePlanner {
          return null;
       Plan p = addSelectPred(myplan);
       return new NestedLoopsPlan(current, p, joinpred);
+   }
+
+   private Plan makeHashJoin(Plan current, Schema currsch) {
+       for (String fldname : myschema.fields()) {
+           String outerfield = mypred.equatesWithField(fldname);
+
+           if (outerfield != null && currsch.hasField(outerfield)) {
+               Plan p = addSelectPred(myplan);
+
+               p = new HashJoinPlan(tx, current, p, outerfield, fldname);
+
+               return addJoinPred(p, currsch);
+           }
+       }
+
+       return null;
    }
 
    private Plan makeProductJoin(Plan current, Schema currsch) {

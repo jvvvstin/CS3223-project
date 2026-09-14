@@ -3,6 +3,7 @@ package simpledb.opt;
 import java.util.*;
 import simpledb.materialize.*;
 import simpledb.metadata.MetadataMgr;
+import simpledb.parse.AggregateFnData;
 import simpledb.parse.QueryData;
 import simpledb.plan.*;
 import simpledb.tx.Transaction;
@@ -47,12 +48,20 @@ public class HeuristicQueryPlanner implements QueryPlanner {
             currentplan = getLowestProductPlan(currentplan);
       }
 
-      // Step 4.  Add a sort plan, if there is an order by clause
+
       Plan p = currentplan;
+
+      if (data.hasGroupBy() || data.hasAggregates()) {
+          List<AggregationFn> aggfns = makeAggFns(data.aggregates());
+
+          p = new GroupByPlan(tx, p, data.groupFields(), aggfns);
+      }
+
+      // Step 5.  Add a sort plan, if there is an order by clause
       if (data.hasSortFields())
           p = new SortPlan(tx, p, data.sortFields());
 
-      // Step 5.  Project on the field names and return
+      // Step 6.  Project on the field names and return
       p = new ProjectPlan(p, data.fields());
 
       return p;
@@ -99,6 +108,42 @@ public class HeuristicQueryPlanner implements QueryPlanner {
       }
       tableplanners.remove(besttp);
       return bestplan;
+   }
+
+   private List<AggregationFn> makeAggFns(List<AggregateFnData> aggdata) {
+       List<AggregationFn> aggfns = new ArrayList<>();
+
+       for (AggregateFnData agg : aggdata) {
+           String fn = agg.function();
+           String fldname = agg.fieldName();
+
+           switch (fn) {
+               case "count":
+                   aggfns.add(new CountFn(fldname));
+                   break;
+
+               case "sum":
+                   aggfns.add(new SumFn(fldname));
+                   break;
+
+               case "avg":
+                   aggfns.add(new AvgFn(fldname));
+                   break;
+
+               case "min":
+                   aggfns.add(new MinFn(fldname));
+                   break;
+
+               case "max":
+                   aggfns.add(new MaxFn(fldname));
+                   break;
+
+               default:
+                   throw new RuntimeException("Unknown aggregate function: " + fn);
+           }
+       }
+
+       return aggfns;
    }
 
    public void setPlanner(Planner p) {
