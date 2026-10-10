@@ -2,10 +2,12 @@ package simpledb.materialize;
 
 import simpledb.query.Constant;
 import simpledb.query.Scan;
+import simpledb.record.Schema;
 
 public class AvgFn implements AggregationFn {
+    public void addToSchema(Schema sch, Schema inputSchema) { sch.addIntField(fieldName()); }
     private String fldname;
-    private int sum;
+    private long sum;
     private int count;
 
     public AvgFn(String fldname) {
@@ -29,6 +31,6 @@ public class AvgFn implements AggregationFn {
     }
 
     public Constant value() {
-        return new Constant(sum/count);
+        return new Constant((int) Math.round((double) sum / count));
     }
 }

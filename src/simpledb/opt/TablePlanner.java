@@ -72,13 +72,19 @@ class TablePlanner {
       String strategy = "indexjoin";
 
       if (p == null) {
-          p = makeHashJoin(current, currsch);
-          strategy = "hashjoin";
-      }
-
-      if (p == null) {
-          p = makeMergeJoin(current, currsch);
-          strategy = "mergejoin";
+          Plan hash = makeHashJoin(current, currsch);
+          Plan merge = makeMergeJoin(current, currsch);
+          if (hash != null && merge != null) {
+             if (hash.blocksAccessed() <= merge.blocksAccessed()) {
+                p = hash; strategy = "hashjoin";
+             } else {
+                p = merge; strategy = "mergejoin";
+             }
+          } else if (hash != null) {
+             p = hash; strategy = "hashjoin";
+          } else if (merge != null) {
+             p = merge; strategy = "mergejoin";
+          }
       }
 
       if (p == null) {

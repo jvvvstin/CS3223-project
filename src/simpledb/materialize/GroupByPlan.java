@@ -31,13 +31,13 @@ public class GroupByPlan implements Plan {
       List<OrderBy> sortfields = new ArrayList<>();
       for (String fldname : groupfields)
          sortfields.add(new OrderBy(fldname)); // default ascending
-      this.p = new SortPlan(tx, p, sortfields);
+      this.p = groupfields.isEmpty() ? p : new SortPlan(tx, p, sortfields);
       this.groupfields = groupfields;
       this.aggfns = aggfns;
       for (String fldname : groupfields)
          sch.add(fldname, p.schema());
       for (AggregationFn fn : aggfns)
-         sch.addIntField(fn.fieldName());
+         fn.addToSchema(sch, p.schema());
    }
    
    /**

@@ -2,8 +2,12 @@ package simpledb.materialize;
 
 import simpledb.query.Constant;
 import simpledb.query.Scan;
+import simpledb.record.Schema;
 
 public class MinFn implements AggregationFn {
+    public void addToSchema(Schema sch, Schema inputSchema) {
+        sch.addField(fieldName(), inputSchema.type(fldname), inputSchema.length(fldname));
+    }
     public String fldname;
     private Constant val;
 

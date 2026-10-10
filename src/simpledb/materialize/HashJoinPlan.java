@@ -30,7 +30,7 @@ public class HashJoinPlan implements Plan {
     }
 
     public int blocksAccessed() {
-        return p1.blocksAccessed() + p2.blocksAccessed();
+        return 3 * (p1.blocksAccessed() + p2.blocksAccessed());
     }
 
     public int recordsOutput() {

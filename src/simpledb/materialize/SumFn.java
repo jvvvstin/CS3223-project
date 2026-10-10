@@ -2,8 +2,10 @@ package simpledb.materialize;
 
 import simpledb.query.Constant;
 import simpledb.query.Scan;
+import simpledb.record.Schema;
 
 public class SumFn implements AggregationFn {
+    public void addToSchema(Schema sch, Schema inputSchema) { sch.addIntField(fieldName()); }
     private String fldname;
     private int sum;
 
