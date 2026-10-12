@@ -3,6 +3,7 @@ package simpledb.parse;
 import java.util.*;
 
 import simpledb.query.*;
+import simpledb.materialize.AggregationFn;
 
 /**
  * Data for the SQL <i>select</i> statement.
@@ -13,6 +14,8 @@ public class QueryData {
    private Collection<String> tables;
    private Predicate pred;
    private List<OrderBy> sortFields;
+   private List<String> groupFields = new ArrayList<>();
+   private List<AggregationFn> aggFns = new ArrayList<>();
 
    
    /**
@@ -28,6 +31,36 @@ public class QueryData {
       this.tables = tables;
       this.pred = pred;
       this.sortFields = sortFields;
+   }
+
+   public QueryData(List<String> fields, Collection<String> tables, Predicate pred,
+                    List<String> groupFields, List<AggregationFn> aggFns,
+                    List<OrderBy> sortFields) {
+      this(fields, tables, pred, sortFields);
+      this.groupFields = groupFields;
+      this.aggFns = aggFns;
+   }
+
+   public List<String> groupFields() {
+      return groupFields;
+   }
+
+   public List<AggregationFn> aggFns() {
+      return aggFns;
+   }
+
+   public boolean hasAggregation() {
+      return !aggFns.isEmpty() || !groupFields.isEmpty();
+   }
+
+   // turns an output name like "sumofx" back into "sum(x)"
+   private String display(String fldname) {
+      for (AggregationFn fn : aggFns)
+         if (fn.fieldName().equals(fldname)) {
+            int i = fldname.indexOf("of");
+            return fldname.substring(0, i) + "(" + fldname.substring(i + 2) + ")";
+         }
+      return fldname;
    }
    
    /**
@@ -66,7 +99,7 @@ public class QueryData {
    public String toString() {
       String result = "select ";
       for (String fldname : fields)
-         result += fldname + ", ";
+         result += display(fldname) + ", ";
       result = result.substring(0, result.length()-2);
       result += " from ";
       for (String tblname : tables)
@@ -75,10 +108,16 @@ public class QueryData {
       String predstring = pred.toString();
       if (!predstring.equals(""))
          result += " where " + predstring;
+      if (!groupFields.isEmpty()) {
+         result += " group by ";
+         for (String g : groupFields)
+            result += g + ", ";
+         result = result.substring(0, result.length()-2);
+      }
       if (hasSortFields()) {
          result += " order by ";
          for (OrderBy ob : sortFields)
-            result += ob.toString() + ", ";
+            result += display(ob.fieldName()) + (ob.isAscending() ? "" : " desc") + ", ";
          result = result.substring(0, result.length()-2);
       }
       return result;

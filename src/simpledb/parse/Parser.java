@@ -4,6 +4,7 @@ import java.util.*;
 
 import simpledb.query.*;
 import simpledb.record.*;
+import simpledb.materialize.*;
 
 /**
  * The SimpleDB parser.
@@ -11,6 +12,7 @@ import simpledb.record.*;
  */
 public class Parser {
    private Lexer lex;
+   private List<AggregationFn> aggFns = new ArrayList<>();
    
    public Parser(String s) {
       lex = new Lexer(s);
@@ -55,6 +57,7 @@ public class Parser {
 // Methods for parsing queries
    
    public QueryData query() {
+      aggFns = new ArrayList<>();
       lex.eatKeyword("select");
       List<String> fields = selectList();
       lex.eatKeyword("from");
@@ -64,13 +67,64 @@ public class Parser {
          lex.eatKeyword("where");
          pred = predicate();
       }
+      List<String> groupFields = new ArrayList<>();
+      if (lex.matchKeyword("group")) {
+         lex.eatKeyword("group");
+         lex.eatKeyword("by");
+         groupFields = groupList();
+      }
       List<OrderBy> sortFields = new ArrayList<>();
       if (lex.matchKeyword("order")) {
          lex.eatKeyword("order");
          lex.eatKeyword("by");
          sortFields = sortList();
       }
-      return new QueryData(fields, tables, pred, sortFields);
+      // with aggregation, every plain select field must be a group field
+      if (!aggFns.isEmpty() || !groupFields.isEmpty())
+         for (String f : fields)
+            if (!groupFields.contains(f) && !isAggField(f))
+               throw new BadSyntaxException();
+      return new QueryData(fields, tables, pred, groupFields, aggFns, sortFields);
+   }
+
+   private boolean isAggField(String fldname) {
+      for (AggregationFn fn : aggFns)
+         if (fn.fieldName().equals(fldname))
+            return true;
+      return false;
+   }
+
+   private List<String> groupList() {
+      List<String> L = new ArrayList<>();
+      L.add(field());
+      if (lex.matchDelim(',')) {
+         lex.eatDelim(',');
+         L.addAll(groupList());
+      }
+      return L;
+   }
+
+   // Parses a plain field or an aggregate like sum(grade). Aggregates are
+   // registered once in aggFns; the output name (e.g. "sumofgrade") is returned.
+   private String fieldOrAggregate() {
+      String name = field();
+      if (!lex.matchDelim('('))
+         return name;
+      lex.eatDelim('(');
+      String arg = field();
+      lex.eatDelim(')');
+      AggregationFn fn;
+      switch (name) {
+         case "sum":   fn = new SumFn(arg);   break;
+         case "count": fn = new CountFn(arg); break;
+         case "avg":   fn = new AvgFn(arg);   break;
+         case "min":   fn = new MinFn(arg);   break;
+         case "max":   fn = new MaxFn(arg);   break;
+         default: throw new BadSyntaxException();
+      }
+      if (!isAggField(fn.fieldName()))
+         aggFns.add(fn);
+      return fn.fieldName();
    }
 
    private List<OrderBy> sortList() {
@@ -84,7 +138,7 @@ public class Parser {
    }
 
    private OrderBy sortField() {
-      String fldname = field();
+      String fldname = fieldOrAggregate();
       boolean ascending = true;
       if (lex.matchKeyword("asc")) {
          lex.eatKeyword("asc");
@@ -99,7 +153,7 @@ public class Parser {
    
    private List<String> selectList() {
       List<String> L = new ArrayList<String>();
-      L.add(field());
+      L.add(fieldOrAggregate());
       if (lex.matchDelim(',')) {
          lex.eatDelim(',');
          L.addAll(selectList());

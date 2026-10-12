@@ -34,4 +34,8 @@ public interface AggregationFn {
     * @return the computed aggregation value
     */
    Constant value();
+
+   default String sourceField() {
+      return null;
+   }
 }

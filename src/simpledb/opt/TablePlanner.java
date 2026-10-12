@@ -1,14 +1,15 @@
 package simpledb.opt;
 
 import java.util.Map;
-import simpledb.tx.Transaction;
-import simpledb.record.*;
-import simpledb.query.*;
-import simpledb.metadata.*;
 import simpledb.index.planner.*;
-import simpledb.multibuffer.MultibufferProductPlan;
+import simpledb.materialize.HashJoinPlan;
 import simpledb.materialize.MergeJoinPlan;
+import simpledb.metadata.*;
+import simpledb.multibuffer.MultibufferProductPlan;
 import simpledb.plan.*;
+import simpledb.query.*;
+import simpledb.record.*;
+import simpledb.tx.Transaction;
 
 /**
  * This class contains methods for planning a single table.
@@ -20,6 +21,7 @@ class TablePlanner {
    private Schema myschema;
    private Map<String,IndexInfo> indexes;
    private Transaction tx;
+   private String equistrategy;
    
    /**
     * Creates a new table planner.
@@ -70,8 +72,8 @@ class TablePlanner {
       String strategy = "indexjoin";
 
       if (p == null) {
-          p = makeMergeJoin(current, currsch);
-          strategy = "mergejoin";
+          p = makeEquiJoin(current, currsch);
+          strategy = equistrategy;
       }
 
       if (p == null) {
@@ -118,6 +120,28 @@ class TablePlanner {
          }
       }
       return null;
+   }
+
+   private Plan makeEquiJoin(Plan current, Schema currsch) {
+      for (String fldname : myschema.fields()) {
+         String outerfield = mypred.equatesWithField(fldname);
+         if (outerfield != null && currsch.hasField(outerfield)) {
+            Plan inner = addSelectPred(myplan);
+            Plan hash = new HashJoinPlan(tx, current, inner, outerfield, fldname);
+            Plan merge = new MergeJoinPlan(tx, current, inner, outerfield, fldname);
+            int mergecost = merge.blocksAccessed()
+                          + sortCost(current.blocksAccessed()) + sortCost(inner.blocksAccessed());
+            boolean usehash = hash.blocksAccessed() <= mergecost;
+            equistrategy = usehash ? "hashjoin" : "mergejoin";
+            Plan p = usehash ? hash : merge;
+            return addJoinPred(p, currsch);
+         }
+      }
+      return null;
+   }
+
+   private int sortCost(int blocks) {
+      return 2 * blocks * (int) Math.ceil(Math.log(Math.max(blocks, 2)) / Math.log(2));
    }
 
    private Plan makeMergeJoin(Plan current, Schema currsch) {

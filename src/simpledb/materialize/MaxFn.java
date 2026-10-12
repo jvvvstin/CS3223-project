@@ -18,6 +18,10 @@ public class MaxFn implements AggregationFn {
       this.fldname = fldname;
    }
    
+   public String sourceField() {
+      return fldname;
+   }
+   
    /**
     * Start a new maximum to be the 
     * field value in the current record.

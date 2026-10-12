@@ -47,8 +47,11 @@ public class HeuristicQueryPlanner implements QueryPlanner {
             currentplan = getLowestProductPlan(currentplan);
       }
 
-      // Step 4.  Add a sort plan, if there is an order by clause
+      // Step 4a. Add a group-by plan (sort-based), if there are aggregates or a group by clause
       Plan p = currentplan;
+      if (data.hasAggregation())
+         p = new GroupByPlan(tx, p, data.groupFields(), data.aggFns());
+      // Step 4b. Add a sort plan, if there is an order by clause
       if (data.hasSortFields())
           p = new SortPlan(tx, p, data.sortFields());
 
