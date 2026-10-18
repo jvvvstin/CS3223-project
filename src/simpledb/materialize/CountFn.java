@@ -8,6 +8,7 @@ import simpledb.record.Schema;
  * @author Edward Sciore
  */
 public class CountFn implements AggregationFn {
+   public AggregationFn newInstance() { return new CountFn(fldname); }
    public void addToSchema(Schema sch, Schema inputSchema) { sch.addIntField(fieldName()); }
    private String fldname;
    private int count;

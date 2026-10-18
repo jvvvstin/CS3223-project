@@ -1,0 +1,56 @@
+Lab 5 review resolutions
+=======================
+
+Hash join
+---------
+HashJoinPlan.open() partitions both inputs. HashJoinScan.next() builds one
+partition at a time and streams matching rows, preserving duplicate pairs.
+There is no result TempTable. The input with the smaller estimated materialized
+size is the build side (left wins ties). Partitioning uses floorMod, so negative
+integer hashes are valid. Hash collisions still require equal key values.
+beforeFirst() replays existing partitions; close() releases the current probe.
+
+The hash estimate includes child execution plus partition writes/reads.
+TablePlanner compares it with a local estimate including natural-run sorting
+for merge join; merge wins ties. The legacy SortPlan/MergeJoinPlan cost methods
+are unchanged. The local comparison estimate can therefore differ from the
+legacy cost reported by MergeJoinPlan. These remain estimates:
+run/partition padding, input ordering, hash skew and buffer-cache hits are not
+modeled. A build partition must fit in Java heap; recursive spilling is not
+implemented.
+
+Parsing and planning
+--------------------
+count, sum, avg, min and max are ordinary identifiers unless followed by '('.
+ORDER BY count(sid) and ORDER BY countofsid both work. Aggregate expressions
+needed only for ordering are computed before the final projection.
+Ungrouped plain fields in aggregate queries and noninteger SUM/AVG arguments
+are rejected with BadSyntaxException and a message.
+
+AggregateFnData remains the parser-to-planner representation. QueryFinisher
+shares validation, aggregation and sorting across Basic, Better
+and Heuristic planners. AggregationFnFactory creates functions; GroupByPlan
+creates fresh accumulators for each open scan. MIN/MAX preserve source types
+using addToSchema().
+
+Chosen semantics
+----------------
+AVG uses a long accumulator and Math.round(double), returning INTEGER:
+18186 / 9 yields 2021. Half ties follow Java Math.round (toward positive infinity).
+There is no sort when GROUP BY has no fields.
+Empty sorts are safe.
+Because this engine does not represent SQL NULL, every aggregate over an empty
+input produces ZERO ROWS, including COUNT alone and mixtures of COUNT/SUM/etc.
+This is consistent but is not standard SQL's COUNT=0/other aggregates=NULL row.
+It intentionally replaces the previous COUNT-only special case.
+
+Validation
+----------
+Run these Java applications from the project root; each uses a temporary copy
+of studentdb:
+  simpledb.test.ReviewRegressionTest
+  simpledb.test.StudentJoinTest
+  simpledb.test.StudentAggregateTest
+
+No tracked .class files, out/ files or sources.txt were present on this branch.
+.gitignore now excludes them; no artifacts were deleted from other branches.

@@ -8,6 +8,7 @@ import simpledb.record.Schema;
  * @author Edward Sciore
  */
 public class MaxFn implements AggregationFn {
+   public AggregationFn newInstance() { return new MaxFn(fldname); }
    public void addToSchema(Schema sch, Schema inputSchema) {
       sch.addField(fieldName(), inputSchema.type(fldname), inputSchema.length(fldname));
    }

@@ -4,6 +4,9 @@
 # Build output
 bin/
 obj/
+out/
+*.class
+/sources.txt
 
 # VS Cide
 .vscode/

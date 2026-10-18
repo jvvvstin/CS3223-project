@@ -48,7 +48,9 @@ public class GroupByPlan implements Plan {
     */
    public Scan open() {
       Scan s = p.open();
-      return new GroupByScan(s, groupfields, aggfns);
+      List<AggregationFn> fresh = new ArrayList<>();
+      for (AggregationFn fn : aggfns) fresh.add(fn.newInstance());
+      return new GroupByScan(s, groupfields, fresh);
    }
    
    /**

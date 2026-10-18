@@ -5,6 +5,7 @@ import simpledb.query.Scan;
 import simpledb.record.Schema;
 
 public class MinFn implements AggregationFn {
+   public AggregationFn newInstance() { return new MinFn(fldname); }
     public void addToSchema(Schema sch, Schema inputSchema) {
         sch.addField(fieldName(), inputSchema.type(fldname), inputSchema.length(fldname));
     }
