@@ -4,6 +4,8 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 import simpledb.plan.*;
+import simpledb.parse.BadSyntaxException;
+import simpledb.materialize.SortPlan;
 import simpledb.query.Scan;
 import simpledb.server.SimpleDB;
 import simpledb.tx.Transaction;
@@ -24,10 +26,24 @@ public class DistinctExplainTest {
       db = new SimpleDB(copy.toString());
       tx = db.newTx();
       try {
+         db.planner().executeUpdate("create table explain(explain int, val int)", tx);
+         db.planner().executeUpdate("insert into explain(explain, val) values (7, 8)", tx);
+         check("select explain, val from explain", "7|8");
+         if (!db.planner().explainQuery("explain select explain from explain", tx).contains("TableScan [explain]"))
+            throw new AssertionError("EXPLAIN identifier conflicts with command");
          check("select distinct majorid from student", "10", "20", "30");
          check("SELECT DISTINCT majorid FROM student ORDER BY majorid DESC", "30", "20", "10");
          check("select distinct majorid, gradyear from student order by majorid, gradyear",
                "10|2021", "10|2022", "20|2019", "20|2020", "20|2022", "30|2020", "30|2021");
+         check("select distinct majorid, gradyear from student order by gradyear desc, majorid",
+               "10|2022", "20|2022", "10|2021", "30|2021", "20|2020", "30|2020", "20|2019");
+         check("select distinct majorid, gradyear from student order by gradyear desc",
+               "10|2022", "20|2022", "10|2021", "30|2021", "20|2020", "30|2020", "20|2019");
+         for (String query : Arrays.asList("select distinct majorid from student",
+               "select distinct majorid, gradyear from student order by gradyear desc")) {
+            Plan singleSort = db.planner().createQueryPlan(query, tx);
+            if (sortCount(singleSort) != 1) throw new AssertionError(singleSort.explain());
+         }
          check("select distinct prof from section", "brando", "einstein", "newton", "turing");
          check("select distinct sid from student where sid = 999");
          check("select distinct majorid from student where sid = 1", "10");
@@ -38,7 +54,10 @@ public class DistinctExplainTest {
          check("select majorid from student order by majorid", "10", "10", "10", "20", "20", "20", "20", "30", "30");
          boolean rejected = false;
          try { db.planner().createQueryPlan("select distinct majorid from student order by sname", tx); }
-         catch (IllegalArgumentException e) { rejected = true; }
+         catch (BadSyntaxException e) {
+            rejected = true;
+            if (!e.getMessage().contains("sname")) throw new AssertionError(e);
+         }
          if (!rejected) throw new AssertionError("Unselected ORDER BY field accepted");
 
          Set<String> before = fileNames(copy);
@@ -64,6 +83,11 @@ public class DistinctExplainTest {
       Set<String> names = new HashSet<>();
       try (Stream<Path> files = Files.list(dir)) { files.forEach(p -> names.add(p.getFileName().toString())); }
       return names;
+   }
+   private static int sortCount(Plan plan) {
+      int count = plan instanceof SortPlan ? 1 : 0;
+      for (Plan child : plan.children()) count += sortCount(child);
+      return count;
    }
    private static void check(String sql, String... expected) {
       Plan p = db.planner().createQueryPlan(sql, tx);

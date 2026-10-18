@@ -1,7 +1,6 @@
 package simpledb.materialize;
 
 import java.util.*;
-import simpledb.parse.QueryData;
 import simpledb.plan.*;
 import simpledb.query.*;
 import simpledb.record.Schema;
@@ -11,17 +10,17 @@ import simpledb.tx.Transaction;
 public class DistinctPlan implements Plan {
    private final Plan sorted;
    public DistinctPlan(Transaction tx, Plan input) {
-      List<OrderBy> keys = new ArrayList<>();
-      for (String field : input.schema().fields()) keys.add(new OrderBy(field));
-      sorted = new SortPlan(tx, input, keys);
+      this(tx, input, defaultKeys(input));
    }
-   public static Plan finish(Transaction tx, Plan input, QueryData data) {
-      for (OrderBy key : data.sortFields())
-         if (!data.fields().contains(key.fieldName()))
-            throw new IllegalArgumentException("SELECT DISTINCT requires ORDER BY fields in the select list");
-      Plan result = new DistinctPlan(tx, new ProjectPlan(input, data.fields()));
-      if (data.hasSortFields()) result = new SortPlan(tx, result, data.sortFields());
-      return result;
+   /** The supplied sort key must cover every output field for full-row deduplication. */
+   public DistinctPlan(Transaction tx, Plan input, List<OrderBy> order) {
+      sorted = new SortPlan(tx, input, new ArrayList<>(order));
+   }
+   private static List<OrderBy> defaultKeys(Plan input) {
+      List<OrderBy> keys = new ArrayList<>();
+      for (String field : input.schema().fields())
+         keys.add(new OrderBy(field));
+      return keys;
    }
    public Scan open() { return new DistinctScan(sorted.open(), schema().fields()); }
    public int blocksAccessed() { return sorted.blocksAccessed(); }
