@@ -27,11 +27,12 @@ public class StudentJoinTest {
       db = new SimpleDB(copy.toString());
       tx = db.newTx();
       try {
-         check("HashJoinScan", "select title, prof from course, section where cid = courseid",
+         // Buffer-sized runs now make these tiny sorts tie with hash; ties choose merge.
+         check("MergeJoinScan", "select title, prof from course, section where cid = courseid",
                "db systems|turing", "db systems|turing", "calculus|newton", "calculus|einstein", "elocution|brando");
          check("MergeJoinScan", "select title, prof from course, section where cid = courseid and deptid = 10 and yearoffered = 2019",
                "db systems|turing");
-         check("HashJoinScan", "select sname, eid from student, enroll where sid = studentid",
+         check("MergeJoinScan", "select sname, eid from student, enroll where sid = studentid",
                "joe|14", "joe|24", "amy|34", "sue|44", "sue|54", "kim|64");
          check("MergeJoinScan", "select title, prof from course, section where cid = courseid and deptid = 30 and yearoffered = 2018",
                "elocution|brando");
