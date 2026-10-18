@@ -50,8 +50,6 @@ public class BetterQueryPlanner implements QueryPlanner {
       //Step 3: Add a selection plan for the predicate
       p = new SelectPlan(p, data.pred());
       
-      //Step 4: Project on the field names
-      p = new ProjectPlan(p, data.fields());
-      return p;
+      return QueryFinisher.finish(p, data, tx);
    }
 }

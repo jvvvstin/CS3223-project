@@ -5,6 +5,7 @@ import simpledb.query.Scan;
 import simpledb.record.Schema;
 
 public class SumFn implements AggregationFn {
+   public AggregationFn newInstance() { return new SumFn(fldname); }
     public void addToSchema(Schema sch, Schema inputSchema) { sch.addIntField(fieldName()); }
     private String fldname;
     private int sum;

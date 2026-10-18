@@ -9,6 +9,7 @@ import simpledb.record.Schema;
  * @author Edward Sciore
  */
 public interface AggregationFn {
+   AggregationFn newInstance();
    void addToSchema(Schema sch, Schema inputSchema);
    
    /**

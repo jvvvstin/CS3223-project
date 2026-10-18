@@ -75,7 +75,9 @@ class TablePlanner {
           Plan hash = makeHashJoin(current, currsch);
           Plan merge = makeMergeJoin(current, currsch);
           if (hash != null && merge != null) {
-             if (hash.blocksAccessed() <= merge.blocksAccessed()) {
+             long mergecost = sortCost(current) + sortCost(addSelectPred(myplan));
+             System.out.println("join comparison estimates: hash=" + hash.blocksAccessed() + ", merge=" + mergecost);
+             if (hash.blocksAccessed() < mergecost) {
                 p = hash; strategy = "hashjoin";
              } else {
                 p = merge; strategy = "mergejoin";
@@ -131,6 +133,17 @@ class TablePlanner {
          }
       }
       return null;
+   }
+
+   // Local correction: legacy MergeJoinPlan counts only the final sorted reads.
+   // Estimate natural runs for random input, including creation and intermediate
+   // two-way merge passes. Padding, existing order and duplicate rewinds are unknown.
+   private long sortCost(Plan input) {
+      long blocks = new simpledb.materialize.MaterializePlan(tx, input).blocksAccessed();
+      long runs = Math.max(1L, ((long) input.recordsOutput() + 1) / 2);
+      int passes = 0;
+      while (runs > 2) { runs = (runs + 1) / 2; passes++; }
+      return input.blocksAccessed() + 2L * blocks * (1 + passes);
    }
 
    private Plan makeMergeJoin(Plan current, Schema currsch) {

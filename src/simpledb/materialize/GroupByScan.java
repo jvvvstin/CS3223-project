@@ -14,7 +14,6 @@ public class GroupByScan implements Scan {
    private List<AggregationFn> aggfns;
    private GroupValue groupval;
    private boolean moregroups;
-   private boolean emptyCountGroup;
    
    /**
     * Create a groupby scan, given a grouped table scan.
@@ -40,14 +39,7 @@ public class GroupByScan implements Scan {
    public void beforeFirst() {
       s.beforeFirst();
       moregroups = s.next();
-      // COUNT has a defined empty-input value even though SimpleDB has no NULL type.
-      emptyCountGroup = !moregroups && groupfields.isEmpty() && !aggfns.isEmpty();
-      for (AggregationFn fn : aggfns) {
-         if (fn instanceof CountFn)
-            ((CountFn) fn).reset();
-         else
-            emptyCountGroup = false;
-      }
+      // Consistent no-NULL policy: an empty input produces no aggregate row.
    }
    
    /**
@@ -62,10 +54,6 @@ public class GroupByScan implements Scan {
     * @see simpledb.query.Scan#next()
     */
    public boolean next() {
-      if (emptyCountGroup) {
-         emptyCountGroup = false;
-         return true;
-      }
       if (!moregroups)
          return false;
       for (AggregationFn fn : aggfns)

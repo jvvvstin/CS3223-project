@@ -75,17 +75,18 @@ public class Parser {
       if (lex.matchKeyword("order")) {
          lex.eatKeyword("order");
          lex.eatKeyword("by");
-         sortFields = sortList();
+         sortFields = sortList(aggregates);
       }
-      return new QueryData(fields, tables, pred, sortFields, groupByFields, aggregates);
+      QueryData data = new QueryData(fields, tables, pred, sortFields, groupByFields, aggregates);
+      return data;
    }
 
-   private List<OrderBy> sortList() {
+   private List<OrderBy> sortList(List<AggregateFnData> aggregates) {
       List<OrderBy> L = new ArrayList<>();
-      L.add(sortField());
+      L.add(sortField(aggregates));
       if (lex.matchDelim(',')) {
          lex.eatDelim(',');
-         L.addAll(sortList());
+         L.addAll(sortList(aggregates));
       }
       return L;
    }
@@ -105,8 +106,8 @@ public class Parser {
        return fldname;
    }
 
-   private OrderBy sortField() {
-      String fldname = field();
+   private OrderBy sortField(List<AggregateFnData> aggregates) {
+      String fldname = fieldOrAggregate(aggregates);
       boolean ascending = true;
       if (lex.matchKeyword("asc")) {
          lex.eatKeyword("asc");
@@ -119,52 +120,32 @@ public class Parser {
       return new OrderBy(fldname, ascending);
    }
    
-   private List<String> selectList(List<AggregateFnData> aggregates) {
-      List<String> L = new ArrayList<String>();
-
-      if (lex.matchKeyword("count") ||
-          lex.matchKeyword("sum") ||
-          lex.matchKeyword("avg") ||
-          lex.matchKeyword("min") ||
-          lex.matchKeyword("max")) {
-          String fn;
-
-          if (lex.matchKeyword("count")) {
-              fn = "count";
-              lex.eatKeyword("count");
-          } else if (lex.matchKeyword("sum")) {
-              fn = "sum";
-              lex.eatKeyword("sum");
-          } else if (lex.matchKeyword("avg")) {
-              fn = "avg";
-              lex.eatKeyword("avg");
-          } else if (lex.matchKeyword("min")) {
-              fn = "min";
-              lex.eatKeyword("min");
-          } else {
-              fn = "max";
-              lex.eatKeyword("max");
-          }
-
-          lex.eatDelim('(');
-          String fldname = field();
-          lex.eatDelim(')');
-
-          AggregateFnData agg = new AggregateFnData(fn, fldname);
-          aggregates.add(agg);
-
-          L.add(agg.outputFieldName());
-      } else {
-          L.add(field());
-      }
-
-      if (lex.matchDelim(',')) {
-         lex.eatDelim(',');
-         L.addAll(selectList(aggregates));
-      }
-      return L;
+   private String fieldOrAggregate(List<AggregateFnData> aggregates) {
+      String name = field();
+      if (!lex.matchDelim('(')) return name;
+      if (!Arrays.asList("count", "sum", "avg", "min", "max").contains(name))
+         throw new BadSyntaxException("Unknown aggregate: " + name);
+      lex.eatDelim('(');
+      String source = field();
+      lex.eatDelim(')');
+      AggregateFnData agg = new AggregateFnData(name, source);
+      boolean exists = false;
+      for (AggregateFnData previous : aggregates)
+         if (previous.outputFieldName().equals(agg.outputFieldName())) exists = true;
+      if (!exists) aggregates.add(agg);
+      return agg.outputFieldName();
    }
-   
+
+   private List<String> selectList(List<AggregateFnData> aggregates) {
+      List<String> fields = new ArrayList<>();
+      fields.add(fieldOrAggregate(aggregates));
+      while (lex.matchDelim(',')) {
+         lex.eatDelim(',');
+         fields.add(fieldOrAggregate(aggregates));
+      }
+      return fields;
+   }
+
    private Collection<String> tableList() {
       Collection<String> L = new ArrayList<String>();
       L.add(lex.eatId());

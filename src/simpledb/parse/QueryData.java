@@ -89,8 +89,15 @@ public class QueryData {
    
    public String toString() {
       String result = "select ";
-      for (String fldname : fields)
-         result += fldname + ", ";
+      for (String fldname : fields) {
+         String expression = fldname;
+         for (AggregateFnData agg : aggregates)
+            if (agg.outputFieldName().equals(fldname)) {
+               expression = agg.toString();
+               break;
+            }
+         result += expression + ", ";
+      }
       result = result.substring(0, result.length()-2);
       result += " from ";
       for (String tblname : tables)
@@ -108,7 +115,12 @@ public class QueryData {
       if (hasSortFields()) {
          result += " order by ";
          for (OrderBy ob : sortFields)
-            result += ob.toString() + ", ";
+            {
+               String expression = ob.fieldName();
+               for (AggregateFnData agg : aggregates)
+                  if (agg.outputFieldName().equals(expression)) { expression = agg.toString(); break; }
+               result += expression + (ob.isAscending() ? "" : " desc") + ", ";
+            }
          result = result.substring(0, result.length()-2);
       }
       return result;
