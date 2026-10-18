@@ -30,7 +30,9 @@ public class ReviewRegressionTest {
                new BasicQueryPlanner(db.mdMgr()), new BetterQueryPlanner(db.mdMgr())};
          for (QueryPlanner qp : planners) {
             check(qp, tx, "select sum(gradyear) from student where sid > 100");
-            check(qp, tx, "select count(sid) from student where sid > 100");
+            check(qp, tx, "select count(sid) from student where sid > 100", "0");
+            check(qp, tx, "select count(sid), count(sname) from student where sid > 100", "0|0");
+            check(qp, tx, "select count(sid) from student where sid > 100 order by count(sid)", "0");
             check(qp, tx, "select count(sid), sum(gradyear), avg(gradyear), min(sname), max(sname) from student where sid > 100");
             check(qp, tx, "select majorid, count(sid) from student where sid > 100 group by majorid");
             check(qp, tx, "select sname from student where sid > 100 order by sname");

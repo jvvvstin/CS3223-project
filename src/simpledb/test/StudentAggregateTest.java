@@ -41,7 +41,7 @@ public class StudentAggregateTest {
          check("select dname, count(sid), min(sname), max(sname) from student, dept where majorid = did group by dname order by dname", "compsci|3|joe|max", "drama|2|art|bob", "math|4|amy|sue");
          check("select sname, count(eid) from student, enroll where sid = studentid group by sname order by sname", "amy|1", "joe|2", "kim|1", "sue|2");
          check("select majorid, count(sid) from student group by majorid order by countofsid desc", "20|4", "10|3", "30|2");
-         check("select count(sid) from student where sid = 999");
+         check("select count(sid) from student where sid = 999", "0");
          check("select majorid, count(sid) from student where sid = 999 group by majorid");
          System.out.println("PASS: " + passed + " queries; each also verified after beforeFirst().");
       } finally { tx.rollback(); }
