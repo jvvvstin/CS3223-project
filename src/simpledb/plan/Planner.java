@@ -133,6 +133,6 @@ public class Planner {
 
    private void verifyField(Schema sch, String tblname, String fldname) {
       if (!sch.hasField(fldname))
-         throw new BadSyntaxException("Unknown field: " + fldname + " in table " + tblname);
+         throw new BadSyntaxException("Unknown field in table " + tblname + ": " + fldname);
    }
 }

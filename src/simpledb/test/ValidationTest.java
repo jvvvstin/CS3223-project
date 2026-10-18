@@ -37,10 +37,10 @@ public class ValidationTest {
 
          // An update statement naming a field the table does not have.
          reject("insert into student(sid, nosuchfield) values (99, 1)",
-               "Unknown field: nosuchfield in table student");
-         reject("update student set nosuchfield = 1", "Unknown field: nosuchfield in table student");
+               "Unknown field in table student: nosuchfield");
+         reject("update student set nosuchfield = 1", "Unknown field in table student: nosuchfield");
          reject("create index badidx on student(nosuchfield)",
-               "Unknown field: nosuchfield in table student");
+               "Unknown field in table student: nosuchfield");
 
          // A query naming a field no table has is still caught downstream.
          reject("select nosuchfield from student", "Unknown field: nosuchfield");
