@@ -1,6 +1,8 @@
 package simpledb.opt;
 
 import java.util.Map;
+
+import simpledb.materialize.HashJoinPlan;
 import simpledb.tx.Transaction;
 import simpledb.record.*;
 import simpledb.query.*;
@@ -70,8 +72,21 @@ class TablePlanner {
       String strategy = "indexjoin";
 
       if (p == null) {
-          p = makeMergeJoin(current, currsch);
-          strategy = "mergejoin";
+          Plan hash = makeHashJoin(current, currsch);
+          Plan merge = makeMergeJoin(current, currsch);
+          if (hash != null && merge != null) {
+             long mergecost = sortCost(current) + sortCost(addSelectPred(myplan));
+             System.out.println("join comparison estimates: hash=" + hash.blocksAccessed() + ", merge=" + mergecost);
+             if (hash.blocksAccessed() < mergecost) {
+                p = hash; strategy = "hashjoin";
+             } else {
+                p = merge; strategy = "mergejoin";
+             }
+          } else if (hash != null) {
+             p = hash; strategy = "hashjoin";
+          } else if (merge != null) {
+             p = merge; strategy = "mergejoin";
+          }
       }
 
       if (p == null) {
@@ -120,6 +135,17 @@ class TablePlanner {
       return null;
    }
 
+   // Local correction: legacy MergeJoinPlan counts only the final sorted reads.
+   // Estimate natural runs for random input, including creation and intermediate
+   // two-way merge passes. Padding, existing order and duplicate rewinds are unknown.
+   private long sortCost(Plan input) {
+      long blocks = new simpledb.materialize.MaterializePlan(tx, input).blocksAccessed();
+      long runs = Math.max(1L, ((long) input.recordsOutput() + 1) / 2);
+      int passes = 0;
+      while (runs > 2) { runs = (runs + 1) / 2; passes++; }
+      return input.blocksAccessed() + 2L * blocks * (1 + passes);
+   }
+
    private Plan makeMergeJoin(Plan current, Schema currsch) {
       for (String fldname : myschema.fields()) {
          String outerfield = mypred.equatesWithField(fldname);
@@ -138,6 +164,22 @@ class TablePlanner {
          return null;
       Plan p = addSelectPred(myplan);
       return new NestedLoopsPlan(current, p, joinpred);
+   }
+
+   private Plan makeHashJoin(Plan current, Schema currsch) {
+       for (String fldname : myschema.fields()) {
+           String outerfield = mypred.equatesWithField(fldname);
+
+           if (outerfield != null && currsch.hasField(outerfield)) {
+               Plan p = addSelectPred(myplan);
+
+               p = new HashJoinPlan(tx, current, p, outerfield, fldname);
+
+               return addJoinPred(p, currsch);
+           }
+       }
+
+       return null;
    }
 
    private Plan makeProductJoin(Plan current, Schema currsch) {

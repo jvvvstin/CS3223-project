@@ -1,6 +1,7 @@
 package simpledb.materialize;
 
 import simpledb.query.*;
+import simpledb.record.Schema;
 
 /**
  * The interface implemented by aggregation functions.
@@ -8,6 +9,8 @@ import simpledb.query.*;
  * @author Edward Sciore
  */
 public interface AggregationFn {
+   AggregationFn newInstance();
+   void addToSchema(Schema sch, Schema inputSchema);
    
    /**
     * Use the current record of the specified scan

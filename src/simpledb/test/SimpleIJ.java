@@ -38,16 +38,17 @@ public class SimpleIJ {
    }
 
    private static void doQuery(SimpleDB db, String cmd) {
+      Transaction tx = db.newTx();
+      Scan s = null;
 	   try {
 		    // analogous to the connection
-	        Transaction tx  = db.newTx();
 	        Planner planner = db.planner();
 	         
 	        // analogous to the statement
 	        Plan p = planner.createQueryPlan(cmd, tx);
 
 	        // analogous to the result set
-	        Scan s = p.open();
+	        s = p.open();
 	        Schema schema = p.schema();
 	        EmbeddedMetaData md = new EmbeddedMetaData(schema);
 	        int numcols = md.getColumnCount();
@@ -85,22 +86,26 @@ public class SimpleIJ {
 				System.out.println();
 			}
 			s.close();
+            s = null;
 			tx.commit();
        }
 	   catch(Exception e) {
-		   e.printStackTrace();
+		   if (s != null) s.close();
+           tx.rollback();
+           System.out.println("SQL Exception: " + e.getMessage());
 	   }
    }
 
    private static void doUpdate(SimpleDB db, String cmd) {
+      Transaction tx = db.newTx();
       try {
-	      Transaction tx  = db.newTx();
 	      Planner planner = db.planner();
 	      int howmany = planner.executeUpdate(cmd, tx);
 	      System.out.println(howmany + " records processed");
 	      tx.commit();
       }
       catch (Exception e) {
+         tx.rollback();
          System.out.println("SQL Exception: " + e.getMessage());
       }
    }

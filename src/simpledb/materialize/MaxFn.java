@@ -1,12 +1,17 @@
 package simpledb.materialize;
 
 import simpledb.query.*;
+import simpledb.record.Schema;
 
 /**
  * The <i>max</i> aggregation function.
  * @author Edward Sciore
  */
 public class MaxFn implements AggregationFn {
+   public AggregationFn newInstance() { return new MaxFn(fldname); }
+   public void addToSchema(Schema sch, Schema inputSchema) {
+      sch.addField(fieldName(), inputSchema.type(fldname), inputSchema.length(fldname));
+   }
    private String fldname;
    private Constant val;
    

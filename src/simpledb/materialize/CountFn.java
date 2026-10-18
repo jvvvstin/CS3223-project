@@ -1,14 +1,18 @@
 package simpledb.materialize;
 
 import simpledb.query.*;
+import simpledb.record.Schema;
 
 /**
  * The <i>count</i> aggregation function.
  * @author Edward Sciore
  */
 public class CountFn implements AggregationFn {
+   public AggregationFn newInstance() { return new CountFn(fldname); }
+   public void addToSchema(Schema sch, Schema inputSchema) { sch.addIntField(fieldName()); }
    private String fldname;
    private int count;
+   public void reset() { count = 0; }
    
    /**
     * Create a count aggregation function for the specified field.
