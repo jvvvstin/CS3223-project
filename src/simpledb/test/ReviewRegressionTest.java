@@ -30,14 +30,18 @@ public class ReviewRegressionTest {
                new BasicQueryPlanner(db.mdMgr()), new BetterQueryPlanner(db.mdMgr())};
          for (QueryPlanner qp : planners) {
             check(qp, tx, "select sum(gradyear) from student where sid > 100");
-            check(qp, tx, "select count(sid) from student where sid > 100");
+            check(qp, tx, "select count(sid) from student where sid > 100", "0");
+            check(qp, tx, "select count(sid), count(sname) from student where sid > 100", "0|0");
+            check(qp, tx, "select count(sid) from student where sid > 100 order by count(sid)", "0");
             check(qp, tx, "select count(sid), sum(gradyear), avg(gradyear), min(sname), max(sname) from student where sid > 100");
             check(qp, tx, "select majorid, count(sid) from student where sid > 100 group by majorid");
             check(qp, tx, "select sname from student where sid > 100 order by sname");
+            check(qp, tx, "select distinct sname from student where sid > 100");
             check(qp, tx, "select avg(gradyear) from student", "2021");
             check(qp, tx, "select min(sname), max(sname) from student", "amy|sue");
             check(qp, tx, "select majorid, count(sid) from student group by majorid order by count(sid) desc", "20|4", "10|3", "30|2");
             check(qp, tx, "select majorid from student group by majorid order by count(sid) desc", "20", "10", "30");
+            check(qp, tx, "select distinct count(sectid) from section group by prof order by count(sectid) desc", "2", "1");
             check(qp, tx, "select count, sum, avg, min, max from kw", "2|3|4|5|6");
             check(qp, tx, "select count(count), sum(sum), avg(avg), min(min), max(max) from kw", "1|3|4|5|6");
             reject(qp, tx, "select sid, count(sid) from student");
