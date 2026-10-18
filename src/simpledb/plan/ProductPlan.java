@@ -9,6 +9,8 @@ import simpledb.record.Schema;
   * @author Edward Sciore
   */
 public class ProductPlan implements Plan {
+   public String description() { return "Product"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p1, p2); }
    private Plan p1, p2;
    private Schema schema = new Schema();
    

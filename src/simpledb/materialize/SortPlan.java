@@ -11,10 +11,13 @@ import simpledb.tx.Transaction;
  * @author Edward Sciore
  */
 public class SortPlan implements Plan {
+   public String description() { return "Sort " + sortKeys; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p); }
    private Transaction tx;
    private Plan p;
    private Schema sch;
    private RecordComparator comp;
+   private List<OrderBy> sortKeys;
    
    /**
     * Create a sort plan for the specified query.
@@ -24,6 +27,7 @@ public class SortPlan implements Plan {
     */
    public SortPlan(Transaction tx, Plan p, List<OrderBy> sortfields) {
       this.tx = tx;
+      this.sortKeys = new ArrayList<>(sortfields);
       this.p = p;
       sch = p.schema();
       comp = new RecordComparator(sortfields);

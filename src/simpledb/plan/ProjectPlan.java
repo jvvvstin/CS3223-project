@@ -9,6 +9,8 @@ import simpledb.query.*;
  * @author Edward Sciore
  */
 public class ProjectPlan implements Plan {
+   public String description() { return "Project " + schema.fields(); }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p); }
    private Plan p;
    private Schema schema = new Schema();
 

@@ -10,6 +10,8 @@ import simpledb.query.*;
  * @author Edward Sciore
  */
 public class MaterializePlan implements Plan {
+   public String description() { return "Materialize"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(srcplan); }
    private Plan srcplan;
    private Transaction tx;
    

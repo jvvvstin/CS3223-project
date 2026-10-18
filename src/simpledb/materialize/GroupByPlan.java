@@ -11,6 +11,8 @@ import simpledb.tx.Transaction;
  * @author Edward Sciore
  */
 public class GroupByPlan implements Plan {
+   public String description() { return "GroupBy " + groupfields + " output=" + sch.fields(); }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p); }
    private Plan p;
    private List<String> groupfields;
    private List<AggregationFn> aggfns;

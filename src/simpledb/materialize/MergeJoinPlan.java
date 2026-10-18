@@ -11,6 +11,8 @@ import simpledb.tx.Transaction;
  * @author Edward Sciore
  */
 public class MergeJoinPlan implements Plan {
+   public String description() { return "MergeJoin [" + fldname1 + " = " + fldname2 + "]"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p1, p2); }
    private Plan p1, p2;
    private String fldname1, fldname2;
    private Schema sch = new Schema();

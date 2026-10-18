@@ -177,6 +177,6 @@ public class Lexer {
                                "create", "table", "int", "varchar", "view", "as", "index", "on",
                                "using", "hash", "btree",
                                "order", "by", "asc", "desc",
-                               "group");
+                               "group", "distinct", "explain");
    }
 }
