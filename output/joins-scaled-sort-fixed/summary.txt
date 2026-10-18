@@ -1,0 +1,51 @@
+Join experiments after multiway-sort fixes
+=========================================
+Code revision: b605f19 (experiment branch); Lab 6 fix: 7316d23.
+New measurements: output/joins-scaled-sort-fixed; baseline: output/joins-scaled.
+All timed executions validated the full result multiset (4000 rows).
+See fork-*/environment.txt for JVM, warmup, repetition and dataset settings.
+Execution includes open, full consumption/serialization and close.
+Planning, copying, correctness checks and rollback are excluded.
+OS caches were not flushed. These are separate sessions, not a controlled
+paired trial: machine load and JVM/cache effects also influence differences.
+
+Configuration                 Old median  New median     New min     New max     n
+                                         (all times in milliseconds)
+E1_HASH                         328.913     260.187     256.823     268.377     3
+E1_INDEX                         33.258      31.719      30.355      31.867     3
+E1_MERGE                       3868.230     822.269     809.850    1248.254     3
+E1_MULTIBUFFER                 2423.759    2260.452    2217.027    2352.331     3
+E1_NESTED_LOOP                 2700.463    2637.904    2618.795    3024.162     3
+E2_OPT_HASH                     846.708     912.695     868.642    1485.066     3
+E2_OPT_MERGE                  11589.073    3532.947    3360.371    3640.590     3
+E2_OPT_NESTED_LOOP             3836.522    3607.623    3530.481    3999.854     3
+E2_P1_HASH                     1289.124    1363.380    1300.637    1457.962     3
+E2_P1_MERGE                    6633.090    5266.237    4811.908    7560.371     3
+E2_P1_MULTIBUFFER              3929.690    3904.256    3815.967    6788.262     3
+E2_P1_NESTED_LOOP              3547.635    3419.603    3336.820    4295.074     3
+E2_P2_HASH                      950.055     861.435     845.952     875.336     3
+E2_P2_MERGE                   11286.989    3250.910    2989.364    3641.831     3
+E2_P2_MULTIBUFFER              3495.109    4488.017    3696.259    5880.236     3
+E2_P2_NESTED_LOOP              4359.451    3600.890    3471.874    3667.961     3
+E2_P3_HASH                     1324.030    1313.860    1274.150    1331.087     3
+E2_P3_MERGE                   11967.709    5180.828    5178.824    5488.766     3
+E2_P3_MULTIBUFFER              4421.902    3885.665    3840.916    4933.237     3
+E2_P3_NESTED_LOOP              3927.719    3704.953    3631.833    4221.426     3
+
+Plans (table prefix bench_ on the larger dataset):
+E1: student -> enroll; five join methods.
+E2 OPT: heuristic order with the named method restriction.
+E2 P1: student -> enroll -> section -> course.
+E2 P2: course -> section -> enroll -> student.
+E2 P3: section -> enroll -> student -> course.
+Exact executed trees, updated I/O estimates and SQL: fork-*/plans.txt.
+The three fixed plans each test nested loop, hash, merge and multibuffer.
+
+Interpretation:
+Sort now uses block-budgeted initial runs and k-way intermediate merges.
+Merge joins cap their final sorted cursors at two runs to leave sibling
+buffer space. EXPLAIN now includes estimated sorting I/O, not elapsed time.
+Hash and index joins do not directly benefit from the sorting change.
+Do not attribute changes in their timings solely to the sort optimization.
+Old reports and measurements are retained unchanged; their timings describe
+the old implementation. This summary does not update the historical PDF.
