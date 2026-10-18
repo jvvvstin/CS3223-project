@@ -1,0 +1,353 @@
+Java=17.0.14
+VM=OpenJDK 64-Bit Server VM
+OS=Mac OS X 15.7
+Arch=aarch64
+CPUs=8
+Max heap=536870912
+Block bytes=400
+Buffers=8
+Warmups=1
+Repetitions=3
+Seed=20261018
+Source=/tmp/simpledb-scaled-1000
+Prefix=bench_
+Filter=.*
+
+Actual rows student=1000
+Actual rows enroll=4000
+Actual rows section=200
+Actual rows course=50
+Actual rows dept=10
+
+=== E1_HASH ===
+SQL: select sid, sname, eid, grade from bench_student, bench_enroll where sid = studentid
+Allowed methods: [HASH]
+Order: [bench_student, bench_enroll]
+Project [sid, sname, eid, grade] [estimated rows=2, estimated blocks=900]
+  Filter [sid=studentid] [estimated rows=2, estimated blocks=900]
+    HashJoin [sid = studentid] [estimated rows=2998, estimated blocks=900]
+      TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+
+
+=== E2_P2_MULTIBUFFER ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MULTIBUFFER]
+Order: [bench_course, bench_section, bench_enroll, bench_student]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=334, estimated blocks=887]
+  Filter [sid=studentid] [estimated rows=334, estimated blocks=887]
+    MultibufferProduct [estimated rows=446000, estimated blocks=887]
+      Materialize [estimated rows=446, estimated blocks=90]
+        Filter [sectionid=sectid] [estimated rows=446, estimated blocks=898]
+          MultibufferProduct [estimated rows=596000, estimated blocks=898]
+            Materialize [estimated rows=149, estimated blocks=25]
+              Filter [courseid=cid] [estimated rows=149, estimated blocks=20]
+                MultibufferProduct [estimated rows=10000, estimated blocks=20]
+                  Materialize [estimated rows=50, estimated blocks=5]
+                    TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+                  TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+            TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E2_P2_MERGE ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MERGE]
+Order: [bench_course, bench_section, bench_enroll, bench_student]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=77]
+  Filter [sid=studentid] [estimated rows=0, estimated blocks=77]
+    MergeJoin [studentid = sid] [estimated rows=0, estimated blocks=77]
+      Sort [studentid] [estimated rows=0, estimated blocks=0]
+        Filter [sectionid=sectid] [estimated rows=0, estimated blocks=224]
+          MergeJoin [sectid = sectionid] [estimated rows=5, estimated blocks=224]
+            Sort [sectid] [estimated rows=2, estimated blocks=1]
+              Filter [courseid=cid] [estimated rows=2, estimated blocks=20]
+                MergeJoin [cid = courseid] [estimated rows=149, estimated blocks=20]
+                  Sort [cid] [estimated rows=50, estimated blocks=5]
+                    TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+                  Sort [courseid] [estimated rows=200, estimated blocks=15]
+                    TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+            Sort [sectionid] [estimated rows=4000, estimated blocks=223]
+              TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      Sort [sid] [estimated rows=1000, estimated blocks=77]
+        TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E2_P1_MULTIBUFFER ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MULTIBUFFER]
+Order: [bench_student, bench_enroll, bench_section, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=335, estimated blocks=5]
+  Filter [courseid=cid] [estimated rows=335, estimated blocks=5]
+    MultibufferProduct [estimated rows=22450, estimated blocks=5]
+      Materialize [estimated rows=449, estimated blocks=90]
+        Filter [sectionid=sectid] [estimated rows=449, estimated blocks=390]
+          MultibufferProduct [estimated rows=599600, estimated blocks=390]
+            Materialize [estimated rows=2998, estimated blocks=375]
+              Filter [sid=studentid] [estimated rows=2998, estimated blocks=2302]
+                MultibufferProduct [estimated rows=4000000, estimated blocks=2302]
+                  Materialize [estimated rows=1000, estimated blocks=77]
+                    TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+                  TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+            TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+      TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E1_MULTIBUFFER ===
+SQL: select sid, sname, eid, grade from bench_student, bench_enroll where sid = studentid
+Allowed methods: [MULTIBUFFER]
+Order: [bench_student, bench_enroll]
+Project [sid, sname, eid, grade] [estimated rows=2998, estimated blocks=2302]
+  Filter [sid=studentid] [estimated rows=2998, estimated blocks=2302]
+    MultibufferProduct [estimated rows=4000000, estimated blocks=2302]
+      Materialize [estimated rows=1000, estimated blocks=77]
+        TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+
+
+=== E2_P1_MERGE ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MERGE]
+Order: [bench_student, bench_enroll, bench_section, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=5]
+  Filter [courseid=cid] [estimated rows=0, estimated blocks=5]
+    MergeJoin [courseid = cid] [estimated rows=0, estimated blocks=5]
+      Sort [courseid] [estimated rows=0, estimated blocks=0]
+        Filter [sectionid=sectid] [estimated rows=0, estimated blocks=16]
+          MergeJoin [sectionid = sectid] [estimated rows=0, estimated blocks=16]
+            Sort [sectionid] [estimated rows=2, estimated blocks=1]
+              Filter [sid=studentid] [estimated rows=2, estimated blocks=300]
+                MergeJoin [sid = studentid] [estimated rows=2998, estimated blocks=300]
+                  Sort [sid] [estimated rows=1000, estimated blocks=77]
+                    TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+                  Sort [studentid] [estimated rows=4000, estimated blocks=223]
+                    TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+            Sort [sectid] [estimated rows=200, estimated blocks=15]
+              TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+      Sort [cid] [estimated rows=50, estimated blocks=5]
+        TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E2_P3_MULTIBUFFER ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MULTIBUFFER]
+Order: [bench_section, bench_enroll, bench_student, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=335, estimated blocks=5]
+  Filter [courseid=cid] [estimated rows=335, estimated blocks=5]
+    MultibufferProduct [estimated rows=22450, estimated blocks=5]
+      Materialize [estimated rows=449, estimated blocks=90]
+        Filter [sid=studentid] [estimated rows=449, estimated blocks=752]
+          MultibufferProduct [estimated rows=599000, estimated blocks=752]
+            Materialize [estimated rows=599, estimated blocks=75]
+              Filter [sectionid=sectid] [estimated rows=599, estimated blocks=628]
+                MultibufferProduct [estimated rows=800000, estimated blocks=628]
+                  Materialize [estimated rows=200, estimated blocks=15]
+                    TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+                  TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+            TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E2_OPT_HASH ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [HASH]
+Order: heuristic
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=962]
+  Filter [sid=studentid] [estimated rows=0, estimated blocks=962]
+    HashJoin [studentid = sid] [estimated rows=0, estimated blocks=962]
+      Filter [sectionid=sectid] [estimated rows=0, estimated blocks=731]
+        HashJoin [sectid = sectionid] [estimated rows=5, estimated blocks=731]
+          Filter [courseid=cid] [estimated rows=2, estimated blocks=60]
+            HashJoin [cid = courseid] [estimated rows=149, estimated blocks=60]
+              TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+              TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+          TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E2_P3_HASH ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [HASH]
+Order: [bench_section, bench_enroll, bench_student, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=960]
+  Filter [courseid=cid] [estimated rows=0, estimated blocks=960]
+    HashJoin [courseid = cid] [estimated rows=0, estimated blocks=960]
+      Filter [sid=studentid] [estimated rows=0, estimated blocks=945]
+        HashJoin [studentid = sid] [estimated rows=0, estimated blocks=945]
+          Filter [sectionid=sectid] [estimated rows=0, estimated blocks=714]
+            HashJoin [sectid = sectionid] [estimated rows=599, estimated blocks=714]
+              TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+              TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+          TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E1_INDEX ===
+SQL: select sid, sname, eid, grade from bench_student, bench_enroll where sid = studentid
+Allowed methods: [INDEX]
+Order: [bench_student, bench_enroll]
+Project [sid, sname, eid, grade] [estimated rows=1, estimated blocks=3077]
+  Filter [sid=studentid] [estimated rows=1, estimated blocks=3077]
+    IndexJoin [outer field=sid] [estimated rows=2000, estimated blocks=3077]
+      TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+
+
+=== E2_P1_NESTED_LOOP ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [NESTED_LOOP]
+Order: [bench_student, bench_enroll, bench_section, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=335, estimated blocks=270292]
+  NestedLoopsJoin [courseid=cid] [estimated rows=335, estimated blocks=270292]
+    NestedLoopsJoin [sectionid=sectid] [estimated rows=449, estimated blocks=268047]
+      NestedLoopsJoin [sid=studentid] [estimated rows=2998, estimated blocks=223077]
+        TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+        TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+    TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E2_P2_HASH ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [HASH]
+Order: [bench_course, bench_section, bench_enroll, bench_student]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=962]
+  Filter [sid=studentid] [estimated rows=0, estimated blocks=962]
+    HashJoin [studentid = sid] [estimated rows=0, estimated blocks=962]
+      Filter [sectionid=sectid] [estimated rows=0, estimated blocks=731]
+        HashJoin [sectid = sectionid] [estimated rows=5, estimated blocks=731]
+          Filter [courseid=cid] [estimated rows=2, estimated blocks=60]
+            HashJoin [cid = courseid] [estimated rows=149, estimated blocks=60]
+              TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+              TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+          TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E2_P3_MERGE ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MERGE]
+Order: [bench_section, bench_enroll, bench_student, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=5]
+  Filter [courseid=cid] [estimated rows=0, estimated blocks=5]
+    MergeJoin [courseid = cid] [estimated rows=0, estimated blocks=5]
+      Sort [courseid] [estimated rows=0, estimated blocks=0]
+        Filter [sid=studentid] [estimated rows=0, estimated blocks=77]
+          MergeJoin [studentid = sid] [estimated rows=0, estimated blocks=77]
+            Sort [studentid] [estimated rows=0, estimated blocks=0]
+              Filter [sectionid=sectid] [estimated rows=0, estimated blocks=238]
+                MergeJoin [sectid = sectionid] [estimated rows=599, estimated blocks=238]
+                  Sort [sectid] [estimated rows=200, estimated blocks=15]
+                    TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+                  Sort [sectionid] [estimated rows=4000, estimated blocks=223]
+                    TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+            Sort [sid] [estimated rows=1000, estimated blocks=77]
+              TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      Sort [cid] [estimated rows=50, estimated blocks=5]
+        TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E1_MERGE ===
+SQL: select sid, sname, eid, grade from bench_student, bench_enroll where sid = studentid
+Allowed methods: [MERGE]
+Order: [bench_student, bench_enroll]
+Project [sid, sname, eid, grade] [estimated rows=2, estimated blocks=300]
+  Filter [sid=studentid] [estimated rows=2, estimated blocks=300]
+    MergeJoin [sid = studentid] [estimated rows=2998, estimated blocks=300]
+      Sort [sid] [estimated rows=1000, estimated blocks=77]
+        TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+      Sort [studentid] [estimated rows=4000, estimated blocks=223]
+        TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+
+
+=== E2_P2_NESTED_LOOP ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [NESTED_LOOP]
+Order: [bench_course, bench_section, bench_enroll, bench_student]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=334, estimated blocks=68324]
+  NestedLoopsJoin [sid=studentid] [estimated rows=334, estimated blocks=68324]
+    NestedLoopsJoin [sectionid=sectid] [estimated rows=446, estimated blocks=33982]
+      NestedLoopsJoin [courseid=cid] [estimated rows=149, estimated blocks=755]
+        TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+        TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+      TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+    TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E1_NESTED_LOOP ===
+SQL: select sid, sname, eid, grade from bench_student, bench_enroll where sid = studentid
+Allowed methods: [NESTED_LOOP]
+Order: [bench_student, bench_enroll]
+Project [sid, sname, eid, grade] [estimated rows=2998, estimated blocks=223077]
+  NestedLoopsJoin [sid=studentid] [estimated rows=2998, estimated blocks=223077]
+    TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+    TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+
+
+=== E2_OPT_MERGE ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [MERGE]
+Order: heuristic
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=77]
+  Filter [sid=studentid] [estimated rows=0, estimated blocks=77]
+    MergeJoin [studentid = sid] [estimated rows=0, estimated blocks=77]
+      Sort [studentid] [estimated rows=0, estimated blocks=0]
+        Filter [sectionid=sectid] [estimated rows=0, estimated blocks=224]
+          MergeJoin [sectid = sectionid] [estimated rows=5, estimated blocks=224]
+            Sort [sectid] [estimated rows=2, estimated blocks=1]
+              Filter [courseid=cid] [estimated rows=2, estimated blocks=20]
+                MergeJoin [cid = courseid] [estimated rows=149, estimated blocks=20]
+                  Sort [cid] [estimated rows=50, estimated blocks=5]
+                    TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+                  Sort [courseid] [estimated rows=200, estimated blocks=15]
+                    TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+            Sort [sectionid] [estimated rows=4000, estimated blocks=223]
+              TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      Sort [sid] [estimated rows=1000, estimated blocks=77]
+        TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E2_P3_NESTED_LOOP ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [NESTED_LOOP]
+Order: [bench_section, bench_enroll, bench_student, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=335, estimated blocks=92983]
+  NestedLoopsJoin [courseid=cid] [estimated rows=335, estimated blocks=92983]
+    NestedLoopsJoin [sid=studentid] [estimated rows=449, estimated blocks=90738]
+      NestedLoopsJoin [sectionid=sectid] [estimated rows=599, estimated blocks=44615]
+        TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+        TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+      TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+    TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+
+
+=== E2_OPT_NESTED_LOOP ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [NESTED_LOOP]
+Order: heuristic
+Project [sid, sname, eid, title, prof, grade] [estimated rows=334, estimated blocks=68324]
+  NestedLoopsJoin [sid=studentid] [estimated rows=334, estimated blocks=68324]
+    NestedLoopsJoin [sectionid=sectid] [estimated rows=446, estimated blocks=33982]
+      NestedLoopsJoin [courseid=cid] [estimated rows=149, estimated blocks=755]
+        TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+        TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+      TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+    TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+
+
+=== E2_P1_HASH ===
+SQL: select sid, sname, eid, title, prof, grade from bench_student, bench_enroll, bench_section, bench_course where sid = studentid and sectionid = sectid and courseid = cid
+Allowed methods: [HASH]
+Order: [bench_student, bench_enroll, bench_section, bench_course]
+Project [sid, sname, eid, title, prof, grade] [estimated rows=0, estimated blocks=962]
+  Filter [courseid=cid] [estimated rows=0, estimated blocks=962]
+    HashJoin [courseid = cid] [estimated rows=0, estimated blocks=962]
+      Filter [sectionid=sectid] [estimated rows=0, estimated blocks=947]
+        HashJoin [sectionid = sectid] [estimated rows=0, estimated blocks=947]
+          Filter [sid=studentid] [estimated rows=2, estimated blocks=900]
+            HashJoin [sid = studentid] [estimated rows=2998, estimated blocks=900]
+              TableScan [bench_student] [estimated rows=1000, estimated blocks=77]
+              TableScan [bench_enroll] [estimated rows=4000, estimated blocks=223]
+          TableScan [bench_section] [estimated rows=200, estimated blocks=15]
+      TableScan [bench_course] [estimated rows=50, estimated blocks=5]
+

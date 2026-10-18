@@ -15,6 +15,16 @@ import simpledb.tx.Transaction;
 public class HeuristicQueryPlanner implements QueryPlanner {
    private Collection<TablePlanner> tableplanners = new ArrayList<>();
    private MetadataMgr mdm;
+   private Set<JoinMethod> allowed;
+   private List<String> fixedOrder;
+
+   /** Null order retains heuristic ordering; a supplied order fixes only table order. */
+   public HeuristicQueryPlanner(MetadataMgr mdm, Set<JoinMethod> allowed, List<String> order) {
+      this(mdm);
+      if (allowed == null || allowed.isEmpty()) throw new IllegalArgumentException("Specify join methods");
+      this.allowed = EnumSet.copyOf(allowed);
+      this.fixedOrder = order == null ? null : new ArrayList<>(order);
+   }
    
    public HeuristicQueryPlanner(MetadataMgr mdm) {
       this.mdm = mdm;
@@ -29,10 +39,24 @@ public class HeuristicQueryPlanner implements QueryPlanner {
     * results in the smallest output.
     */
    public Plan createPlan(QueryData data, Transaction tx) {
+      tableplanners.clear();
+      if (fixedOrder != null) {
+         if (fixedOrder.size() != data.tables().size()
+               || !new HashSet<>(fixedOrder).equals(new HashSet<>(data.tables())))
+            throw new IllegalArgumentException("Fixed order must contain every query table exactly once");
+         Plan current = null;
+         for (String name : fixedOrder) {
+            TablePlanner table = new TablePlanner(name, data.pred(), tx, mdm, allowed);
+            Plan next = current == null ? table.makeSelectPlan() : table.makeJoinPlan(current);
+            if (next == null) throw new IllegalArgumentException("No allowed join for " + name + " using " + allowed);
+            current = next;
+         }
+         return QueryFinisher.finish(current, data, tx);
+      }
       
       // Step 1:  Create a TablePlanner object for each mentioned table
       for (String tblname : data.tables()) {
-         TablePlanner tp = new TablePlanner(tblname, data.pred(), tx, mdm);
+         TablePlanner tp = new TablePlanner(tblname, data.pred(), tx, mdm, allowed);
          tableplanners.add(tp);
       }
       
@@ -44,6 +68,8 @@ public class HeuristicQueryPlanner implements QueryPlanner {
          Plan p = getLowestJoinPlan(currentplan);
          if (p != null)
             currentplan = p;
+         else if (allowed != null)
+            throw new IllegalArgumentException("No executable join using " + allowed);
          else  // no applicable join
             currentplan = getLowestProductPlan(currentplan);
       }

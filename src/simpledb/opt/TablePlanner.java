@@ -17,6 +17,12 @@ import simpledb.plan.*;
  * @author Edward Sciore
  */
 class TablePlanner {
+   private java.util.Set<JoinMethod> allowed;
+   public TablePlanner(String name, Predicate pred, Transaction tx, MetadataMgr mdm,
+         java.util.Set<JoinMethod> allowed) {
+      this(name, pred, tx, mdm);
+      this.allowed = allowed;
+   }
    private TablePlan myplan;
    private Predicate mypred;
    private Schema myschema;
@@ -67,6 +73,23 @@ class TablePlanner {
       Predicate joinpred = mypred.joinSubPred(myschema, currsch);
       if (joinpred == null)
          return null;
+
+      if (allowed != null) {
+         Plan best = null;
+         for (JoinMethod method : allowed) {
+            Plan candidate;
+            switch (method) {
+               case HASH: candidate = makeHashJoin(current, currsch); break;
+               case MERGE: candidate = makeMergeJoin(current, currsch); break;
+               case INDEX: candidate = makeIndexJoin(current, currsch); break;
+               case MULTIBUFFER: candidate = makeProductJoin(current, currsch); break;
+               default: candidate = makeNestedLoopsJoin(current, currsch);
+            }
+            if (candidate != null && (best == null || candidate.blocksAccessed() < best.blocksAccessed()))
+               best = candidate;
+         }
+         return best;
+      }
 
       Plan p = makeIndexJoin(current, currsch);
       String strategy = "indexjoin";

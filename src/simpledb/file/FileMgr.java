@@ -3,7 +3,16 @@ package simpledb.file;
 import java.io.*;
 import java.util.*;
 
-public class FileMgr {
+public class FileMgr implements AutoCloseable {
+   /** Release file handles after all transactions and scans have ended. */
+   public synchronized void close() {
+      IOException failure = null;
+      for (RandomAccessFile file : openFiles.values()) {
+         try { file.close(); } catch (IOException e) { failure = e; }
+      }
+      openFiles.clear();
+      if (failure != null) throw new RuntimeException("Cannot close database files", failure);
+   }
    private File dbDirectory;
    private int blocksize;
    private boolean isNew;

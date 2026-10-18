@@ -18,6 +18,8 @@ public class SortScan implements Scan {
    private RecordComparator comp;
    private boolean hasmore1, hasmore2=false;
    private List<RID> savedposition;
+   private UpdateScan savedscan;
+   private boolean savedmore1, savedmore2;
    
    /**
     * Create a sort scan, given a list of 1 or 2 runs.
@@ -133,9 +135,14 @@ public class SortScan implements Scan {
     * so that it can be restored at a later time.
     */
    public void savePosition() {
-      RID rid1 = s1.getRid();
-      RID rid2 = (s2 == null) ? null : s2.getRid();
+      // A merged cursor includes run identity and lookahead availability, not
+      // just RIDs. Duplicate-key joins may replay after either run reaches EOF.
+      RID rid1 = hasmore1 ? s1.getRid() : null;
+      RID rid2 = hasmore2 ? s2.getRid() : null;
       savedposition = Arrays.asList(rid1,rid2);
+      savedscan = currentscan;
+      savedmore1 = hasmore1;
+      savedmore2 = hasmore2;
    }
    
    /**
@@ -144,8 +151,12 @@ public class SortScan implements Scan {
    public void restorePosition() {
       RID rid1 = savedposition.get(0);
       RID rid2 = savedposition.get(1);
-      s1.moveToRid(rid1);
+      if (rid1 != null)
+         s1.moveToRid(rid1);
       if (rid2 != null)
          s2.moveToRid(rid2);
+      currentscan = savedscan;
+      hasmore1 = savedmore1;
+      hasmore2 = savedmore2;
    }
 }

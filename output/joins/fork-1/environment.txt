@@ -1,0 +1,12 @@
+Java=17.0.14
+VM=OpenJDK 64-Bit Server VM
+OS=Mac OS X 15.7
+Arch=aarch64
+CPUs=8
+Max heap=536870912
+Block bytes=400
+Buffers=8
+Warmups=10
+Repetitions=30
+Seed=20261018
+Source=/Users/justin/eclipse-workspace/SimpleDBEngine/studentdb
