@@ -10,6 +10,8 @@ import simpledb.record.Schema;
   * @author Edward Sciore
   */
 public class SelectPlan implements Plan {
+   public String description() { return "Filter [" + pred + "]"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p); }
    private Plan p;
    private Predicate pred;
    

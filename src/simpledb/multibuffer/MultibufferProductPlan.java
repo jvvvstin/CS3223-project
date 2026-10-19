@@ -12,6 +12,8 @@ import simpledb.plan.Plan;
  * @author Edward Sciore
  */
 public class MultibufferProductPlan implements Plan {
+   public String description() { return "MultibufferProduct"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(lhs, rhs); }
    private Transaction tx;
    private Plan lhs, rhs;
    private Schema schema = new Schema();

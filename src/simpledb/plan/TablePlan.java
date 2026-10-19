@@ -9,6 +9,7 @@ import simpledb.record.*;
   * @author Edward Sciore
   */
 public class TablePlan implements Plan {
+   public String description() { return "TableScan [" + tblname + "]"; }
    private String tblname;
    private Transaction tx;
    private Layout layout;

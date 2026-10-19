@@ -8,6 +8,12 @@ import simpledb.parse.*;
  * @author Edward Sciore
  */
 public class Planner {
+   /** Build and describe the plan without opening any execution scans. */
+   public String explainQuery(String sql, Transaction tx) {
+      QueryData data = new Parser(sql).explainQuery();
+      verifyQuery(data);
+      return qplanner.createPlan(data, tx).explain();
+   }
    private QueryPlanner qplanner;
    private UpdatePlanner uplanner;
    

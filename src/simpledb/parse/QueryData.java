@@ -15,6 +15,9 @@ public class QueryData {
    private List<OrderBy> sortFields;
    private List<String> groupFields;
    private List<AggregateFnData> aggregates;
+   private boolean distinct;
+   public boolean isDistinct() { return distinct; }
+   public void setDistinct(boolean distinct) { this.distinct = distinct; }
    
    /**
     * Saves the field and table list and predicate.
@@ -88,7 +91,7 @@ public class QueryData {
    }
    
    public String toString() {
-      String result = "select ";
+      String result = distinct ? "select distinct " : "select ";
       for (String fldname : fields) {
          String expression = fldname;
          for (AggregateFnData agg : aggregates)

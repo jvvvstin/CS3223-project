@@ -12,6 +12,8 @@ import simpledb.index.query.IndexSelectScan;
   * @author Edward Sciore
   */
 public class IndexSelectPlan implements Plan {
+   public String description() { return "IndexSelect [key=" + val + "]"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p); }
    private Plan p;
    private IndexInfo ii;
    private Constant val;

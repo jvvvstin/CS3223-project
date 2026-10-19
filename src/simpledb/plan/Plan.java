@@ -10,6 +10,19 @@ import simpledb.record.*;
  *
  */
 public interface Plan {
+   default String description() { return getClass().getSimpleName(); }
+   default java.util.List<Plan> children() { return java.util.Collections.emptyList(); }
+   default String explain() {
+      StringBuilder text = new StringBuilder();
+      appendExplanation(text, "");
+      return text.toString();
+   }
+   default void appendExplanation(StringBuilder text, String indent) {
+      text.append(indent).append(description()).append(" [estimated rows=")
+          .append(recordsOutput()).append(", estimated blocks=")
+          .append(blocksAccessed()).append("]\n");
+      for (Plan child : children()) child.appendExplanation(text, indent + "  ");
+   }
    
    /**
     * Opens a scan corresponding to this plan.

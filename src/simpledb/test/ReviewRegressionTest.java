@@ -29,6 +29,9 @@ public class ReviewRegressionTest {
          QueryPlanner[] planners = {new HeuristicQueryPlanner(db.mdMgr()),
                new BasicQueryPlanner(db.mdMgr()), new BetterQueryPlanner(db.mdMgr())};
          for (QueryPlanner qp : planners) {
+            check(qp, tx, "select distinct majorid, gradyear from student order by gradyear desc",
+                  "10|2022", "20|2022", "10|2021", "30|2021", "20|2020", "30|2020", "20|2019");
+            reject(qp, tx, "select distinct majorid from student order by sname");
             check(qp, tx, "select sum(gradyear) from student where sid > 100");
             check(qp, tx, "select count(sid) from student where sid > 100", "0");
             check(qp, tx, "select count(sid), count(sname) from student where sid > 100", "0|0");

@@ -22,9 +22,13 @@ public class SimpleIJ {
          while (sc.hasNextLine()) {
             // process one line of input
             String cmd = sc.nextLine().trim();
-            if (cmd.startsWith("exit"))
+            if (cmd.isEmpty()) continue;
+            String keyword = cmd.split("\\s+", 2)[0].toLowerCase(java.util.Locale.ROOT);
+            if (keyword.equals("exit"))
                break;
-            else if (cmd.startsWith("select"))
+            else if (keyword.equals("explain"))
+               doExplain(db, cmd);
+            else if (keyword.equals("select"))
                doQuery(db, cmd);
             else
                doUpdate(db, cmd);
@@ -94,6 +98,17 @@ public class SimpleIJ {
            tx.rollback();
            System.out.println("SQL Exception: " + e.getMessage());
 	   }
+   }
+
+   private static void doExplain(SimpleDB db, String cmd) {
+      Transaction tx = db.newTx();
+      try {
+         System.out.print(db.planner().explainQuery(cmd, tx));
+         tx.commit();
+      } catch (Exception e) {
+         tx.rollback();
+         System.out.println("SQL Exception: " + e.getMessage());
+      }
    }
 
    private static void doUpdate(SimpleDB db, String cmd) {

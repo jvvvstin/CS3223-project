@@ -10,6 +10,8 @@ import simpledb.record.Schema;
  * relational algebra operator.
  */
 public class NestedLoopsPlan implements Plan {
+   public String description() { return "NestedLoopsJoin [" + pred + "]"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p1, p2); }
    private Plan p1, p2;
    private Predicate pred;
    private Schema schema = new Schema();

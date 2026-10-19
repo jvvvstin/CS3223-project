@@ -8,7 +8,7 @@ import simpledb.query.OrderBy;
 import simpledb.record.Schema;
 import simpledb.tx.Transaction;
 
-/** Shared validation and GROUP BY / ORDER BY for all planners. */
+/** Shared validation and GROUP BY / DISTINCT / ORDER BY for all planners. */
 public final class QueryFinisher {
    private QueryFinisher() {}
    public static Plan finish(Plan input, QueryData data, Transaction tx) {
@@ -36,6 +36,18 @@ public final class QueryFinisher {
       }
       Plan result = input;
       if (grouped) result = new GroupByPlan(tx, result, data.groupFields(), functions);
+      if (data.isDistinct()) {
+         for (OrderBy key : data.sortFields())
+            if (!data.fields().contains(key.fieldName()))
+               throw new BadSyntaxException("ORDER BY field must appear in the select list with DISTINCT: "
+                     + key.fieldName());
+         List<OrderBy> keys = new ArrayList<>(data.sortFields());
+         Set<String> seen = new HashSet<>();
+         for (OrderBy key : keys) seen.add(key.fieldName());
+         for (String field : data.fields())
+            if (seen.add(field)) keys.add(new OrderBy(field));
+         return new DistinctPlan(tx, new ProjectPlan(result, data.fields()), keys);
+      }
       if (data.hasSortFields()) result = new SortPlan(tx, result, data.sortFields());
       return new ProjectPlan(result, data.fields());
    }

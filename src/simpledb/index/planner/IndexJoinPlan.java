@@ -12,6 +12,8 @@ import simpledb.index.query.IndexJoinScan;
   * @author Edward Sciore
   */
 public class IndexJoinPlan implements Plan {
+   public String description() { return "IndexJoin [outer field=" + joinfield + "]"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p1, p2); }
    private Plan p1, p2;
    private IndexInfo ii;
    private String joinfield;

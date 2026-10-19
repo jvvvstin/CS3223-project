@@ -9,6 +9,8 @@ import simpledb.record.Schema;
   * @author Edward Sciore
   */
 public class OptimizedProductPlan implements Plan {
+   public String description() { return "OptimizedProduct"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(bestplan); }
    private Plan bestplan;
 
    public OptimizedProductPlan(Plan p1, Plan p2) {

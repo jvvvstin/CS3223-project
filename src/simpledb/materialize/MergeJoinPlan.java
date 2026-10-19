@@ -11,6 +11,8 @@ import simpledb.tx.Transaction;
  * @author Edward Sciore
  */
 public class MergeJoinPlan implements Plan {
+   public String description() { return "MergeJoin [" + fldname1 + " = " + fldname2 + "]"; }
+   public java.util.List<Plan> children() { return java.util.Arrays.asList(p1, p2); }
    private Plan p1, p2;
    private String fldname1, fldname2;
    private Schema sch = new Schema();
@@ -28,11 +30,11 @@ public class MergeJoinPlan implements Plan {
    public MergeJoinPlan(Transaction tx, Plan p1, Plan p2, String fldname1, String fldname2) {
       this.fldname1 = fldname1;
       List<OrderBy> sortlist1 = Arrays.asList(new OrderBy(fldname1));
-      this.p1 = new SortPlan(tx, p1, sortlist1);
+      this.p1 = new SortPlan(tx, p1, sortlist1, 2);
       
       this.fldname2 = fldname2;
       List<OrderBy> sortlist2 = Arrays.asList(new OrderBy(fldname2));
-      this.p2 = new SortPlan(tx, p2, sortlist2);
+      this.p2 = new SortPlan(tx, p2, sortlist2, 2);
       
       sch.addAll(p1.schema());
       sch.addAll(p2.schema());
@@ -45,8 +47,10 @@ public class MergeJoinPlan implements Plan {
      */
    public Scan open() {
       Scan s1 = p1.open();
-      SortScan s2 = (SortScan) p2.open();
-      return new MergeJoinScan(s1, s2, fldname1, fldname2);
+      try {
+         SortScan s2 = (SortScan) p2.open();
+         return new MergeJoinScan(s1, s2, fldname1, fldname2);
+      } catch (RuntimeException e) { s1.close(); throw e; }
    }
    
    /**
@@ -55,13 +59,12 @@ public class MergeJoinPlan implements Plan {
     * Since a mergejoin can be preformed with a single
     * pass through each table, the method returns
     * the sum of the block accesses of the 
-    * materialized sorted tables.
-    * It does <i>not</i> include the one-time cost
-    * of materializing and sorting the records.
+    * sorted inputs, including their materialization and sorting costs.
+    * Duplicate-group replay I/O is not included in this baseline estimate.
     * @see simpledb.plan.Plan#blocksAccessed()
     */
    public int blocksAccessed() {
-      return p1.blocksAccessed() + p2.blocksAccessed();
+      return (int)Math.min(Integer.MAX_VALUE, (long)p1.blocksAccessed() + p2.blocksAccessed());
    }
    
    /**
