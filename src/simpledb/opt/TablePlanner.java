@@ -58,6 +58,10 @@ class TablePlanner {
     * and the table.  The plan will use an indexjoin, if possible.
     * (Which means that if an indexselect is also possible,
     * the indexjoin operator takes precedence.)
+    * Otherwise, for an equality join, the hash join and merge join plans
+    * are both built and the one with fewer estimated block accesses is
+    * used; a tie goes to the merge join. If neither applies, as for a
+    * non-equality join, the nested-loops join is used.
     * The method returns null if no join is possible.
     * @param current the specified plan
     * @return a join plan of the plan and this table
@@ -135,6 +139,11 @@ class TablePlanner {
       return null;
    }
 
+   /**
+    * Returns a merge join of the current plan and this table, or null if
+    * the predicate has no equality between a field of this table and a
+    * field of the current plan. Uses the first such equality found.
+    */
    private Plan makeMergeJoin(Plan current, Schema currsch) {
       for (String fldname : myschema.fields()) {
          String outerfield = mypred.equatesWithField(fldname);
@@ -147,6 +156,11 @@ class TablePlanner {
       return null;
    }
 
+   /**
+    * Returns a nested-loops join of the current plan (outer) and this
+    * table (inner). It evaluates the whole join predicate itself, so it
+    * works for any comparison operator and needs no selection above it.
+    */
    private Plan makeNestedLoopsJoin(Plan current, Schema currsch) {
       Predicate joinpred = mypred.joinSubPred(myschema, currsch);
       if (joinpred == null)
@@ -155,6 +169,11 @@ class TablePlanner {
       return new NestedLoopsPlan(current, p, joinpred);
    }
 
+   /**
+    * Returns a hash join of the current plan and this table, or null if
+    * the predicate has no equality between a field of this table and a
+    * field of the current plan. Uses the first such equality found.
+    */
    private Plan makeHashJoin(Plan current, Schema currsch) {
        for (String fldname : myschema.fields()) {
            String outerfield = mypred.equatesWithField(fldname);
@@ -184,6 +203,12 @@ class TablePlanner {
          return p;
    }
    
+   /**
+    * Adds the join terms between the current plan and this table as a
+    * selection above an index, hash or merge join. Those joins match on
+    * one equality only, so this applies any other join terms; it also
+    * re-checks the equality, which is why EXPLAIN shows it as a Filter.
+    */
    private Plan addJoinPred(Plan p, Schema currsch) {
       Predicate joinpred = mypred.joinSubPred(currsch, myschema);
       if (joinpred != null)

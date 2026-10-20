@@ -36,6 +36,14 @@ public class Predicate {
    }
 
    /**
+    * Returns the terms of the predicate, which are implicitly conjoined.
+    * @return a read-only list of the terms
+    */
+   public List<Term> terms() {
+      return Collections.unmodifiableList(terms);
+   }
+
+   /**
     * Returns true if the predicate evaluates to true
     * with respect to the specified scan.
     * @param s the scan

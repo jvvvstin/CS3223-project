@@ -9,7 +9,14 @@ package simpledb.query;
 public class NestedLoopsScan implements Scan {
    private Scan s1, s2;
    private Predicate pred;
+   private boolean hasOuter;
 
+   /**
+    * Creates a nested-loops join scan.
+    * @param s1 the outer scan, read once
+    * @param s2 the inner scan, re-read for every outer record
+    * @param pred the join predicate, which may use any comparison operator
+    */
    public NestedLoopsScan(Scan s1, Scan s2, Predicate pred) {
       this.s1 = s1;
       this.s2 = s2;
@@ -17,9 +24,15 @@ public class NestedLoopsScan implements Scan {
       beforeFirst();
    }
 
+   /**
+    * Positions the outer scan on its first record and the
+    * inner scan before its first record.
+    * hasOuter records whether the outer scan has a record at all,
+    * so that an empty outer input yields no rows.
+    */
    public void beforeFirst() {
       s1.beforeFirst();
-      s1.next();
+      hasOuter = s1.next();
       s2.beforeFirst();
    }
 
@@ -33,12 +46,19 @@ public class NestedLoopsScan implements Scan {
       return false;
    }
 
-   /** One step of the nested loop; identical to ProductScan.next(). */
+   /**
+    * One step of the nested loop: move the inner scan forward,
+    * and when it runs out, rewind it and move to the next outer record.
+    * Returns false once either input is exhausted.
+    */
    private boolean advance() {
+      if (!hasOuter)
+         return false;
       if (s2.next())
          return true;
       s2.beforeFirst();
-      return s2.next() && s1.next();
+      hasOuter = s2.next() && s1.next();
+      return hasOuter;
    }
 
    public int getInt(String fldname) {

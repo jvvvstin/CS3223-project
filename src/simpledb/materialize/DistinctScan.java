@@ -3,11 +3,21 @@ package simpledb.materialize;
 import java.util.*;
 import simpledb.query.*;
 
-/** Requires input sorted by every output field. */
+/**
+ * The Scan class for SELECT DISTINCT.
+ * The input must be sorted on every field in fields, so that equal rows
+ * are adjacent. A row is skipped when its values equal those of the row
+ * returned before it.
+ */
 public class DistinctScan implements Scan {
    private final Scan input;
    private final List<String> fields;
    private List<Constant> previous;
+
+   /**
+    * @param input the sorted input
+    * @param fields the fields two rows must agree on to be duplicates
+    */
    public DistinctScan(Scan input, List<String> fields) {
       this.input = input;
       this.fields = new ArrayList<>(fields);

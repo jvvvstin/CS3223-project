@@ -4,35 +4,60 @@ import simpledb.query.Constant;
 import simpledb.query.Scan;
 import simpledb.record.Schema;
 
+/**
+ * The <i>min</i> aggregation function.
+ * It works on integer and string fields, and its output field
+ * has the same type and length as the aggregated field.
+ */
 public class MinFn implements AggregationFn {
    public AggregationFn newInstance() { return new MinFn(fldname); }
-    public void addToSchema(Schema sch, Schema inputSchema) {
-        sch.addField(fieldName(), inputSchema.type(fldname), inputSchema.length(fldname));
-    }
-    public String fldname;
-    private Constant val;
+   public void addToSchema(Schema sch, Schema inputSchema) {
+      sch.addField(fieldName(), inputSchema.type(fldname), inputSchema.length(fldname));
+   }
+   private String fldname;
+   private Constant val;
 
-    public MinFn(String fldname) {
-        this.fldname = fldname;
-    }
+   /**
+    * Create a min aggregation function for the specified field.
+    * @param fldname the name of the aggregated field
+    */
+   public MinFn(String fldname) {
+      this.fldname = fldname;
+   }
 
-    public void processFirst(Scan s) {
-        val = s.getVal(fldname);
-    }
+   /**
+    * Start a new minimum to be the
+    * field value in the current record.
+    * @see simpledb.materialize.AggregationFn#processFirst(simpledb.query.Scan)
+    */
+   public void processFirst(Scan s) {
+      val = s.getVal(fldname);
+   }
 
-    public void processNext(Scan s) {
-        Constant newVal = s.getVal(fldname);
+   /**
+    * Replace the current minimum by the field value
+    * in the current record, if it is lower.
+    * @see simpledb.materialize.AggregationFn#processNext(simpledb.query.Scan)
+    */
+   public void processNext(Scan s) {
+      Constant newval = s.getVal(fldname);
+      if (newval.compareTo(val) < 0)
+         val = newval;
+   }
 
-        if (newVal.compareTo(val) < 0) {
-            val = newVal;
-        }
-    }
+   /**
+    * Return the field's name, prepended by "minof".
+    * @see simpledb.materialize.AggregationFn#fieldName()
+    */
+   public String fieldName() {
+      return "minof" + fldname;
+   }
 
-    public String fieldName() {
-        return "minof" + fldname;
-    }
-
-    public Constant value() {
-        return val;
-    }
+   /**
+    * Return the current minimum.
+    * @see simpledb.materialize.AggregationFn#value()
+    */
+   public Constant value() {
+      return val;
+   }
 }

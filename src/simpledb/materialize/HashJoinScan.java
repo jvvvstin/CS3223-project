@@ -4,7 +4,13 @@ import java.util.*;
 import simpledb.query.*;
 import simpledb.record.Schema;
 
-/** Streams matches from one partition at a time; never materializes join output. */
+/**
+ * The Scan class for the hash join.
+ * Partitions are joined one pair at a time. The build partition is read
+ * into a hash table keyed on the join value, then each record of the
+ * matching probe partition looks up its join value and yields one output
+ * row per match. Output rows are streamed, never materialized.
+ */
 public class HashJoinScan implements Scan {
    private final List<TempTable> buildParts, probeParts;
    private final Schema buildSchema, probeSchema;
@@ -16,6 +22,14 @@ public class HashJoinScan implements Scan {
    private Map<String, Constant> current;
    private int partition;
 
+   /**
+    * Creates a scan over the partitions built by HashJoinPlan.
+    * Both lists must hold the same number of partitions, made with the same
+    * hash function, so that partition i of one side can only match partition i
+    * of the other.
+    * @param buildIsLeft whether the build side is the plan's left input, which
+    *        decides which value getVal returns when both sides have the field
+    */
    public HashJoinScan(List<TempTable> buildParts, List<TempTable> probeParts,
          Schema buildSchema, Schema probeSchema, String buildKey, String probeKey, boolean buildIsLeft) {
       this.buildParts = buildParts;
@@ -31,6 +45,11 @@ public class HashJoinScan implements Scan {
       close();
       partition = 0;
    }
+   /**
+    * Loads the next build partition into the hash table and opens
+    * its probe partition.
+    * Returns false when every partition has been joined.
+    */
    private boolean nextPartition() {
       if (probe != null) { probe.close(); probe = null; }
       table.clear();
@@ -46,6 +65,10 @@ public class HashJoinScan implements Scan {
       probe = probeParts.get(partition++).open();
       return true;
    }
+   /**
+    * Moves to the next output row: the next build match for the current
+    * probe record, else the next probe record, else the next partition.
+    */
    public boolean next() {
       try {
          while (true) {
@@ -57,6 +80,7 @@ public class HashJoinScan implements Scan {
          }
       } catch (RuntimeException e) { close(); throw e; }
    }
+   /** Build-side fields come from the hash table row, probe-side fields from the probe scan. */
    public Constant getVal(String field) {
       if (current == null) throw new IllegalStateException("No current hash join row");
       if (buildSchema.hasField(field) && (buildIsLeft || !probeSchema.hasField(field)))
@@ -66,6 +90,7 @@ public class HashJoinScan implements Scan {
    public int getInt(String field) { return getVal(field).asInt(); }
    public String getString(String field) { return getVal(field).asString(); }
    public boolean hasField(String field) { return buildSchema.hasField(field) || probeSchema.hasField(field); }
+   /** Also marks every partition as done, so next() returns false until beforeFirst(). */
    public void close() {
       if (probe != null) { probe.close(); probe = null; }
       table.clear();

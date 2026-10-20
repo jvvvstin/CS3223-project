@@ -9,6 +9,14 @@ import simpledb.record.Schema;
 import simpledb.server.SimpleDB;
 import simpledb.tx.Transaction;
 
+/**
+ * A command-line SQL client that runs against an embedded studentdb.
+ * It reads one statement per line: SELECT runs a query and prints the
+ * result table, EXPLAIN prints the query plan without running it,
+ * EXIT quits, and anything else is run as an update statement.
+ * Each statement runs in its own transaction, which is rolled back
+ * if the statement fails.
+ */
 public class SimpleIJ {
    public static void main(String[] args) {
       Scanner sc = new Scanner(System.in);
@@ -41,6 +49,7 @@ public class SimpleIJ {
       sc.close();
    }
 
+   /** Runs a query and prints its result as a table, one column per output field. */
    private static void doQuery(SimpleDB db, String cmd) {
       Transaction tx = db.newTx();
       Scan s = null;
@@ -100,6 +109,7 @@ public class SimpleIJ {
 	   }
    }
 
+   /** Prints the plan tree for an EXPLAIN statement; the query itself is not run. */
    private static void doExplain(SimpleDB db, String cmd) {
       Transaction tx = db.newTx();
       try {
@@ -111,6 +121,7 @@ public class SimpleIJ {
       }
    }
 
+   /** Runs an insert, delete, update or create statement and prints how many records it affected. */
    private static void doUpdate(SimpleDB db, String cmd) {
       Transaction tx = db.newTx();
       try {

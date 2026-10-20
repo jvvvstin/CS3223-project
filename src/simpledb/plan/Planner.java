@@ -3,6 +3,8 @@ package simpledb.plan;
 import simpledb.tx.Transaction;
 import simpledb.metadata.MetadataMgr;
 import simpledb.parse.*;
+import simpledb.query.Predicate;
+import simpledb.query.Term;
 import simpledb.record.Schema;
 
 /**
@@ -70,18 +72,27 @@ public class Planner {
    }
  
    /**
-    * Verifies that every table named in the from clause exists.
+    * Verifies that every table named in the from clause exists,
+    * and that the where clause names only fields of those tables.
     * A name that denotes a view is accepted here; the tables it
-    * mentions are verified when the view definition is planned.
-    * Field names are verified later, against the schema of the
-    * plan that is constructed from these tables.
+    * mentions are verified when the view definition is planned,
+    * and the where clause of a query over a view is not checked.
+    * The select, group by and order by fields are verified later,
+    * against the schema of the plan built from these tables.
     * @param data the parsed query
     * @param tx the transaction
     */
    private void verifyQuery(QueryData data, Transaction tx) {
-      for (String tblname : data.tables())
+      Schema sch = new Schema();
+      boolean hasView = false;
+      for (String tblname : data.tables()) {
          if (mdm.getViewDef(tblname, tx) == null)
-            tableSchema(tblname, tx);
+            sch.addAll(tableSchema(tblname, tx));
+         else
+            hasView = true;
+      }
+      if (!hasView)
+         verifyPredicate(data.pred(), sch);
    }
 
    /**
@@ -101,12 +112,15 @@ public class Planner {
          if (insdata.fields().size() != insdata.vals().size())
             throw new BadSyntaxException("Value count does not match field count");
       }
-      else if (data instanceof DeleteData)
-         tableSchema(((DeleteData) data).tableName(), tx);
+      else if (data instanceof DeleteData) {
+         DeleteData deldata = (DeleteData) data;
+         verifyPredicate(deldata.pred(), tableSchema(deldata.tableName(), tx));
+      }
       else if (data instanceof ModifyData) {
          ModifyData moddata = (ModifyData) data;
          Schema sch = tableSchema(moddata.tableName(), tx);
          verifyField(sch, moddata.tableName(), moddata.targetField());
+         verifyPredicate(moddata.pred(), sch);
       }
       else if (data instanceof CreateIndexData) {
          CreateIndexData idxdata = (CreateIndexData) data;
@@ -134,5 +148,19 @@ public class Planner {
    private void verifyField(Schema sch, String tblname, String fldname) {
       if (!sch.hasField(fldname))
          throw new BadSyntaxException("Unknown field in table " + tblname + ": " + fldname);
+   }
+
+   /**
+    * Verifies that every term of a where clause names only fields
+    * of the specified schema. Without this check, the query planner
+    * silently drops a term that applies to no table, so a query
+    * returns every row instead of failing.
+    * @param pred the where clause
+    * @param sch the fields of the tables the statement names
+    */
+   private void verifyPredicate(Predicate pred, Schema sch) {
+      for (Term t : pred.terms())
+         if (!t.appliesTo(sch))
+            throw new BadSyntaxException("Unknown field in where clause: " + t);
    }
 }
