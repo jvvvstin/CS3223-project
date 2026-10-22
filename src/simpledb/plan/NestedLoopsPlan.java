@@ -6,8 +6,11 @@ import simpledb.query.Scan;
 import simpledb.record.Schema;
 
 /**
- * The Plan class corresponding to the
- * relational algebra operator.
+ * The Plan class for the tuple-based nested-loops join.
+ * For each record of p1 (the outer input), all of p2 (the inner input)
+ * is scanned and the join predicate is tested on every pair.
+ * The planner uses it only when no index, hash or merge join applies,
+ * which is the case when the join predicate is not an equality.
  */
 public class NestedLoopsPlan implements Plan {
    public String description() { return "NestedLoopsJoin [" + pred + "]"; }
@@ -16,6 +19,12 @@ public class NestedLoopsPlan implements Plan {
    private Predicate pred;
    private Schema schema = new Schema();
 
+   /**
+    * Creates a nested-loops join of the two inputs.
+    * @param p1 the outer input
+    * @param p2 the inner input, re-read once per outer record
+    * @param pred the join predicate
+    */
    public NestedLoopsPlan(Plan p1, Plan p2, Predicate pred) {
       this.p1 = p1;
       this.p2 = p2;

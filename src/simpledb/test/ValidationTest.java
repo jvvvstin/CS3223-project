@@ -45,6 +45,19 @@ public class ValidationTest {
          // A query naming a field no table has is still caught downstream.
          reject("select nosuchfield from student", "Unknown field: nosuchfield");
 
+         // A where clause naming a field no table has. The planner used to
+         // drop such a term, returning every row or, in a join, the product.
+         reject("select sname from student where nosuchfield = 1",
+               "Unknown field in where clause: nosuchfield=1");
+         reject("select sname, dname from student, dept where majorid = nosuchfield",
+               "Unknown field in where clause: majorid=nosuchfield");
+         reject("explain select sname from student where nosuchfield > 1",
+               "Unknown field in where clause: nosuchfield>1");
+         reject("delete from student where nosuchfield = 1",
+               "Unknown field in where clause: nosuchfield=1");
+         reject("update student set gradyear = 2000 where nosuchfield = 1",
+               "Unknown field in where clause: nosuchfield=1");
+
          // Valid statements are unaffected.
          accept("select sname from student where majorid = 10");
          accept("select dname, count(sid) from student, dept where majorid = did group by dname");

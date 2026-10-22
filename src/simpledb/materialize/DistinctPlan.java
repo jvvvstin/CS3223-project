@@ -6,9 +6,17 @@ import simpledb.query.*;
 import simpledb.record.Schema;
 import simpledb.tx.Transaction;
 
-/** Sort the projected tuple, then discard adjacent duplicate tuples. */
+/**
+ * The Plan class for SELECT DISTINCT.
+ * The input is sorted on every output field, so duplicate rows become
+ * adjacent, and DistinctScan keeps the first row of each run of equal rows.
+ * When the query also has ORDER BY, QueryFinisher passes a sort key that
+ * starts with the ORDER BY fields, so one sort does both jobs.
+ */
 public class DistinctPlan implements Plan {
    private final Plan sorted;
+
+   /** Removes duplicates using a sort key of every input field, in schema order. */
    public DistinctPlan(Transaction tx, Plan input) {
       this(tx, input, defaultKeys(input));
    }
@@ -24,6 +32,10 @@ public class DistinctPlan implements Plan {
    }
    public Scan open() { return new DistinctScan(sorted.open(), schema().fields()); }
    public int blocksAccessed() { return sorted.blocksAccessed(); }
+   /**
+    * Estimates the number of distinct rows as the product of the
+    * distinct values of each output field, capped at the input size.
+    */
    public int recordsOutput() {
       long count = 1;
       for (String field : schema().fields())

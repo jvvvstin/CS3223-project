@@ -8,9 +8,29 @@ import simpledb.query.OrderBy;
 import simpledb.record.Schema;
 import simpledb.tx.Transaction;
 
-/** Shared validation and GROUP BY / DISTINCT / ORDER BY for all planners. */
+/**
+ * The last steps of every query plan, shared by all three query planners:
+ * validation of the select, GROUP BY and ORDER BY fields, then the
+ * GROUP BY, DISTINCT, ORDER BY and projection operators.
+ * Field names are checked here, not in Planner.verifyQuery(), because only
+ * here do aggregate output names such as countofsid exist.
+ */
 public final class QueryFinisher {
    private QueryFinisher() {}
+
+   /**
+    * Adds grouping, duplicate removal, sorting and projection on top of
+    * the planner's join plan.
+    * Without DISTINCT, the sort comes before the projection, so ORDER BY
+    * may use a field that is not selected. With DISTINCT, the rows are
+    * projected first and one sort serves both ORDER BY and duplicate removal,
+    * which is why every ORDER BY field must then be selected.
+    * @param input the plan for the FROM and WHERE clauses
+    * @param data the parsed query
+    * @param tx the calling transaction
+    * @return the complete query plan
+    * @throws BadSyntaxException if a field or aggregate is invalid
+    */
    public static Plan finish(Plan input, QueryData data, Transaction tx) {
       Schema schema = input.schema();
       Set<String> outputs = new HashSet<>();
