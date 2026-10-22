@@ -20,7 +20,7 @@ public class Lexer {
       tok = new StreamTokenizer(new StringReader(s));
       tok.ordinaryChar('.');   //disallow "." in identifiers
       tok.wordChars('_', '_'); //allow "_" in identifiers
-      tok.lowerCaseMode(true); //ids and keywords are converted
+      tok.lowerCaseMode(true); //ids and keywords are converted to lower case
       nextToken();
    }
    
@@ -87,6 +87,7 @@ public class Lexer {
     * Throws an exception if the current token is not
     * a comparison operator.
     * Otherwise, returns that operator and moves to the next token.
+    * The supported operators are =, <, >, <=, >=, <> and !=.
     * @return the comparison operator
     */
    public String eatOpr() {
@@ -162,6 +163,7 @@ public class Lexer {
       return s;
    }
    
+   /** Advances to the next token, converting I/O errors to BadSyntaxException. */
    private void nextToken() {
       try {
          tok.nextToken();
@@ -170,7 +172,14 @@ public class Lexer {
          throw new BadSyntaxException();
       }
    }
-   
+   /**
+    * Initializes the set of reserved words.
+    * A reserved word cannot be used as a table or field name.
+    * "group" (with "by") supports the GROUP BY clause.
+    * The aggregate function names (sum, count, avg, min, max) are
+    * deliberately not reserved: the parser recognizes them as an
+    * identifier followed by '('.
+    */
    private void initKeywords() {
       keywords = Arrays.asList("select", "from", "where", "and",
                                "insert", "into", "values", "delete", "update", "set", 

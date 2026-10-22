@@ -16,6 +16,7 @@ public class Term {
     * Create a new term that compares two expressions
     * for equality.
     * @param lhs  the LHS expression
+    * @param opr  the comparison operator: =, <, <=, >, >=, != or <>
     * @param rhs  the RHS expression
     */
    public Term(Expression lhs, String opr, Expression rhs) {
@@ -25,11 +26,13 @@ public class Term {
    }
    
    /**
-    * Return true if both of the term's expressions
-    * evaluate to the same constant,
-    * with respect to the specified scan.
+    * Return true if the comparison holds between the values of the
+    * term's two expressions, with respect to the specified scan.
+    * The values are compared using Constant.compareTo, and the result is
+    * tested according to the term's operator.
     * @param s the scan
-    * @return true if both expressions have the same value in the scan
+    * @return true if the term's operator holds between the LHS and RHS values in the scan
+    * @throws RuntimeException if the term's operator is not one of the supported operators
     */
    public boolean isSatisfied(Scan s) {
 	   Constant lhsval = lhs.evaluate(s);
